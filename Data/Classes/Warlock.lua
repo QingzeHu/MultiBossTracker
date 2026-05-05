@@ -15,6 +15,8 @@ tAuraData.tDotOrderIndices = {
     [9]  = "Seed of Corruption",
     [10] = "Ember Brand",
     [11] = "Shadow Brand",
+    [12] = "Shadowburn",
+    [13] = "Conflagrate",
 }
 
 tAuraData.tDotAuras = {
@@ -45,6 +47,8 @@ tAuraData.tDotAuras = {
     -- 自定义印记 debuff（私服扩展）
     [1295144] = "Ember Brand",
     [1295140] = "Shadow Brand",
+    [29341]   = "Shadowburn",
+    [17962]   = "Conflagrate",
 }
 
 tAuraData.tDamageTriggers = {
@@ -134,6 +138,14 @@ tAuraData.tSpellsInfos = {
         iDuration = 12, sName = "Shadow Brand", iIcon = 425951,
         iColorR = 0.350, iColorG = 0.050, iColorB = 0.650,
         iGlowAtStacks = 6,
+    },
+    ["Shadowburn"] = {
+        iDuration = 5, sName = "Shadowburn", iIcon = 136191,
+        iColorR = 0.650, iColorG = 0.100, iColorB = 0.500,
+    },
+    ["Conflagrate"] = {
+        iDuration = 10, sName = "Conflagrate", iIcon = 135807,
+        iColorR = 0.950, iColorG = 0.450, iColorB = 0.150,
     },
 }
 
