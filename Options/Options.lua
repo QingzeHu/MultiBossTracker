@@ -562,6 +562,17 @@ local function BuildOptionsTable()
                             if MBT.UpdateDotTextSize then MBT:UpdateDotTextSize() end
                         end,
                     },
+                    iDotSize = {
+                        order = 16, type = "range", name = "DoT 图标大小（像素）",
+                        desc = "完整模式下 DoT 图标的边长。默认 32。\n注：紧凑模式不受此设置影响（图标受行高 26px 约束，固定为 24）",
+                        width = "full",
+                        min = 20, max = 48, step = 2,
+                        get = function() return MBT.db.profile.iDotSize end,
+                        set = function(_, v)
+                            MBT.db.profile.iDotSize = v
+                            if MBT.UpdateDotSize then MBT:UpdateDotSize() end
+                        end,
+                    },
 
                     -- ===== 显示内容 =====
                     hDisplay = { order = 20, type = "header", name = "显示内容" },

@@ -17,7 +17,7 @@ local FRAME_HEIGHT = 54
 local ICON_SIZE    = 54
 local HP_HEIGHT    = 30
 local CAST_HEIGHT  = 14    -- boss 施法条高度。需≥10 让字显示，≤22 不撞 HP 中心的 name/百分比文字
-local DOT_SIZE     = 32      -- DoT 图标边长（px）。原来是 22，改大一点更易读
+local DOT_SIZE     = 32      -- DoT 图标边长 fallback（用户没改设置时的默认）
 local MAX_DOT_SLOTS = 8
 
 -- Compact 模式尺寸（紧凑外观）：单条窄血条 + 右侧贴近的 DoT 行
@@ -32,6 +32,12 @@ local function totalWidth(compact)
     return ICON_SIZE + FRAME_WIDTH
 end
 MBT.BossFrameTotalWidth = totalWidth
+
+-- 取当前 DoT 图标边长：完整模式从用户设置读，紧凑模式固定（受行高约束）
+local function getDotSize(compact)
+    if compact then return COMPACT_DOT_SIZE end
+    return (MBT.db and MBT.db.profile and MBT.db.profile.iDotSize) or DOT_SIZE
+end
 
 local SOLID = "Interface\\Buttons\\WHITE8X8"
 
@@ -165,7 +171,7 @@ local function CreateBossFrame(frameID, parent)
 
     -- DoT row container (below the row, attached to right of icon)
     local dotRow = CreateFrame("Frame", nil, btn)
-    dotRow:SetSize(FRAME_WIDTH, DOT_SIZE)
+    dotRow:SetSize(FRAME_WIDTH, getDotSize(false))
     dotRow:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", ICON_SIZE + 1, -2)
     btn.dotRow = dotRow
     btn.dotSlots = {}      -- [sSlotName] = slotFrame
@@ -174,7 +180,7 @@ local function CreateBossFrame(frameID, parent)
     -- Each DoT slot: texture + cooldown swipe + our own centered countdown text + stack count.
     local function CreateDotSlot()
         local f = CreateFrame("Frame", nil, dotRow)
-        local s = btn.compact and COMPACT_DOT_SIZE or DOT_SIZE
+        local s = getDotSize(btn.compact)
         f:SetSize(s, s)
 
         local t = f:CreateTexture(nil, "ARTWORK")
@@ -266,7 +272,7 @@ local function ApplyCompactMode(btn, compact)
 
         -- DoT 行紧贴 boss 框下方（恢复原位，无空隙）
         btn.dotRow:ClearAllPoints()
-        btn.dotRow:SetSize(FRAME_WIDTH, DOT_SIZE)
+        btn.dotRow:SetSize(FRAME_WIDTH, getDotSize(false))
         btn.dotRow:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", ICON_SIZE + 1, -2)
 
         -- 玩家施法条：叠在 HP 条最底部，**最顶层 z-order**
@@ -281,7 +287,7 @@ local function ApplyCompactMode(btn, compact)
     btn.compact = compact
     -- 现有 DoT 槽位也得跟着重新排
     for _, slot in pairs(btn.dotSlots) do
-        local size = compact and COMPACT_DOT_SIZE or DOT_SIZE
+        local size = getDotSize(compact)
         slot:SetSize(size, size)
     end
     if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
@@ -290,7 +296,7 @@ MBT.ApplyCompactMode = ApplyCompactMode
 
 -- Layout DoT slots horizontally, sorted by iOrder.
 local function LayoutDotRow(btn)
-    local size = btn.compact and COMPACT_DOT_SIZE or DOT_SIZE
+    local size = getDotSize(btn.compact)
     local order = {}
     for slot, sf in pairs(btn.dotSlots) do
         if sf:IsShown() then
@@ -328,6 +334,20 @@ function MBT:RefreshAllDotOrders()
                     slot.iOrder = info.iOrder
                 end
             end
+        end
+        if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
+    end
+end
+
+-- 滑动条调整 DoT 图标尺寸时调用：重新设置每个 boss 的 dotRow 高度 + 所有现存槽位大小，再 relayout
+function MBT:UpdateDotSize()
+    for _, btn in pairs(MBT.BossFrames or {}) do
+        local size = getDotSize(btn.compact)
+        if not btn.compact then
+            btn.dotRow:SetSize(FRAME_WIDTH, size)
+        end
+        for _, slot in pairs(btn.dotSlots) do
+            slot:SetSize(size, size)
         end
         if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
     end

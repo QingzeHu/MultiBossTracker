@@ -77,6 +77,7 @@ MBT.defaults = {
         -- Layout / general
         iSkin = 2,                       -- 1=紧凑 2=完整
         iDotTextSize = 14,               -- DoT 倒计时数字字号
+        iDotSize     = 32,               -- DoT 图标边长（仅完整模式；紧凑模式固定，受行高约束）
         bReverseGrowth = false,          -- frames grow downward by default
         fRowGap = 40,                    -- 完整模式下两行之间的像素间距（紧凑模式总用 6px）
         bShowMissingDoTs = true,         -- show DoT slots even when not applied (faded)
