@@ -465,35 +465,54 @@ local function buildClassBindingsGroup(classGroup)
     return args
 end
 
--- DoT 黑名单清单
-local SPELL_BLACKLIST_KEYS = {
-    "Corruption", "Faerie Fire", "Living Bomb", "Insect Swarm", "Shadow Word: Pain",
-    "Immolation", "Unstable Affliction", "Seed of Corruption", "Flame Shock",
-    "Devouring Plague", "Moonfire", "Shadow Embrace", "Haunt", "Vampiric Touch",
-    "Curse of Doom", "Curse of Agony", "Ember Brand", "Shadow Brand", "Shadowburn", "Conflagrate",
-}
--- 黑名单显示名（中文）
-local SPELL_BLACKLIST_LABELS = {
-    ["Corruption"]          = "腐蚀术",
-    ["Faerie Fire"]         = "精灵之火",
-    ["Living Bomb"]         = "活体炸弹",
-    ["Insect Swarm"]        = "虫群",
-    ["Shadow Word: Pain"]   = "暗言术：痛",
-    ["Immolation"]          = "灼烧",
-    ["Unstable Affliction"] = "痛苦无常",
-    ["Seed of Corruption"]  = "腐蚀之种",
-    ["Flame Shock"]         = "烈焰震击",
-    ["Devouring Plague"]    = "吞噬瘟疫",
-    ["Moonfire"]            = "月火术",
-    ["Shadow Embrace"]      = "暗影之拥",
-    ["Haunt"]               = "鬼影缠身",
-    ["Vampiric Touch"]      = "吸血鬼之触",
-    ["Curse of Doom"]       = "厄运诅咒",
-    ["Curse of Agony"]      = "痛苦诅咒",
-    ["Ember Brand"]         = "余烬印记",
-    ["Shadow Brand"]        = "暗影印记",
-    ["Shadowburn"]          = "暗影灼烧",
-    ["Conflagrate"]         = "燃烧",
+-- DoT 黑名单清单：按职业分组组织。每条 = { key = 内部英文名, label = 中文显示名 }
+-- 加新 DoT 时往对应职业 group 末尾追加即可
+local SPELL_BLACKLIST_BY_CLASS = {
+    {
+        sClass = "术士",
+        tSpells = {
+            { sKey = "Corruption",          sLabel = "腐蚀术" },
+            { sKey = "Curse of Agony",      sLabel = "痛苦诅咒" },
+            { sKey = "Curse of Doom",       sLabel = "厄运诅咒" },
+            { sKey = "Haunt",               sLabel = "鬼影缠身" },
+            { sKey = "Immolation",          sLabel = "灼烧" },
+            { sKey = "Seed of Corruption",  sLabel = "腐蚀之种" },
+            { sKey = "Shadow Embrace",      sLabel = "暗影之拥" },
+            { sKey = "Unstable Affliction", sLabel = "痛苦无常" },
+            { sKey = "Ember Brand",         sLabel = "余烬印记" },
+            { sKey = "Shadow Brand",        sLabel = "暗影印记" },
+            { sKey = "Shadowburn",          sLabel = "暗影灼烧" },
+            { sKey = "Conflagrate",         sLabel = "燃烧" },
+        },
+    },
+    {
+        sClass = "法师",
+        tSpells = {
+            { sKey = "Living Bomb", sLabel = "活体炸弹" },
+        },
+    },
+    {
+        sClass = "牧师",
+        tSpells = {
+            { sKey = "Shadow Word: Pain", sLabel = "暗言术：痛" },
+            { sKey = "Vampiric Touch",    sLabel = "吸血鬼之触" },
+            { sKey = "Devouring Plague",  sLabel = "吞噬瘟疫" },
+        },
+    },
+    {
+        sClass = "德鲁伊",
+        tSpells = {
+            { sKey = "Moonfire",     sLabel = "月火术" },
+            { sKey = "Insect Swarm", sLabel = "虫群" },
+            { sKey = "Faerie Fire",  sLabel = "精灵之火" },
+        },
+    },
+    {
+        sClass = "萨满",
+        tSpells = {
+            { sKey = "Flame Shock", sLabel = "烈焰震击" },
+        },
+    },
 }
 
 local function BuildOptionsTable()
@@ -686,20 +705,29 @@ local function BuildOptionsTable()
                     local args = {
                         _intro = {
                             order = 0, type = "description",
-                            name = "勾选后这些 DoT 不会显示在框体下方。\n",
+                            name = "勾选后这些 DoT 不会显示在框体下方，按职业分组。\n",
                         },
                     }
-                    for i, name in ipairs(SPELL_BLACKLIST_KEYS) do
-                        args[name] = {
-                            order = i, type = "toggle",
-                            name = SPELL_BLACKLIST_LABELS[name] or name,
-                            width = "full",
-                            get = function() return MBT.db.profile.tBlacklist[name] end,
-                            set = function(_, v)
-                                MBT.db.profile.tBlacklist[name] = v
-                                MBT:FireEvent("MultiBossTracker_BlacklistChanged")
-                            end,
+                    local order = 10
+                    for _, group in ipairs(SPELL_BLACKLIST_BY_CLASS) do
+                        args["h_" .. group.sClass] = {
+                            order = order, type = "header", name = group.sClass,
                         }
+                        order = order + 1
+                        for _, spell in ipairs(group.tSpells) do
+                            local key = spell.sKey
+                            args[key] = {
+                                order = order, type = "toggle",
+                                name = spell.sLabel,
+                                width = "full",
+                                get = function() return MBT.db.profile.tBlacklist[key] end,
+                                set = function(_, v)
+                                    MBT.db.profile.tBlacklist[key] = v
+                                    MBT:FireEvent("MultiBossTracker_BlacklistChanged")
+                                end,
+                            }
+                            order = order + 1
+                        end
                     end
                     return args
                 end)(),
