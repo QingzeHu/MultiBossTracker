@@ -3,7 +3,7 @@ local addonName, MBT = ...
 
 local tAuraData = {}
 tAuraData.tDotOrderIndices = {
-    [1]="爆炸陷阱",
+    [1]="Explosive Trap",
     [2]="Serpent Sting",
     [3]="Hunter's Mark",
     [4]="Black Arrow",
@@ -22,7 +22,7 @@ tAuraData.tDotAuras = {
     [63670]="Black Arrow", [63671]="Black Arrow", [63672]="Black Arrow",
     [53301]="Explosive Shot", [60051]="Explosive Shot",
     [60052]="Explosive Shot", [60053]="Explosive Shot",
-    [49065]="爆炸陷阱",
+    [49065]="Explosive Trap",
 }
 
 tAuraData.tDamageTriggers = { [53209] = "Chimera Shot" }
@@ -45,8 +45,8 @@ tAuraData.tSpellsInfos = {
         iDuration=15, sName="Black Arrow", iIcon=136181,
         iColorR=0.448, iColorG=0.047, iColorB=0.748,
     },
-    ["爆炸陷阱"] = {
-        iDuration=20, sName="爆炸陷阱", iIcon=135826,
+    ["Explosive Trap"] = {
+        iDuration=20, sName="Explosive Trap", iIcon=135826,
         iColorR=0.448, iColorG=0.047, iColorB=0.748,
     },
     ["Explosive Shot"] = {
