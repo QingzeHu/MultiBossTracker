@@ -575,8 +575,15 @@ local function BuildOptionsTable()
                         get = function() return MBT.db.profile.bShowNPCCasts end,
                         set = function(_, v) MBT.db.profile.bShowNPCCasts = v end,
                     },
+                    bShowPlayerCast = {
+                        order = 23, type = "toggle", name = "显示自己的施法条",
+                        desc = "在每个 boss 框体顶部显示一条青色窄条，表示\"我当前的 cast 正对着这只 boss\"。\n多目标 dot 切换时一眼定位 cast 目标，不再手忙脚乱漏 cast。\n瞬发法术 dot 上去会闪一下；有读条法术（影箭/鬼影）会显示进度。",
+                        width = "full",
+                        get = function() return MBT.db.profile.bShowPlayerCast end,
+                        set = function(_, v) MBT.db.profile.bShowPlayerCast = v end,
+                    },
                     fHealthUpdateInterval = {
-                        order = 23, type = "range", name = "血量刷新间隔（秒）",
+                        order = 24, type = "range", name = "血量刷新间隔（秒）",
                         desc = "数值越小越实时，但开销越高。\n默认 0.1 秒 —— DPS 输出时血量是关键判断依据（处决线、阶段切换），建议保持低值。\n0 = 完全关闭血量更新",
                         width = "full",
                         min = 0, max = 5, step = 0.1,

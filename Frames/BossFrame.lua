@@ -4,7 +4,7 @@
 --
 -- Visual style:
 --   HP bar:    175x30, red 0.769/0.122/0.231/1, solid texture
---   Cast bar:  175x10, gold-ish, behind HP bar
+--   Cast bar:  175x14, gold-ish, behind HP bar (14px 给字留够空间，玩家施法条覆盖底 4 时上方 10 仍可读)
 --   Icon:      55x54 on the left, square
 --   Backdrop:  black 0.4 alpha behind the whole row
 --   Border:    1px black edge
@@ -16,7 +16,7 @@ local FRAME_WIDTH  = 230
 local FRAME_HEIGHT = 54
 local ICON_SIZE    = 54
 local HP_HEIGHT    = 30
-local CAST_HEIGHT  = 10
+local CAST_HEIGHT  = 14    -- boss 施法条高度。需≥10 让字显示，≤22 不撞 HP 中心的 name/百分比文字
 local DOT_SIZE     = 32      -- DoT 图标边长（px）。原来是 22，改大一点更易读
 local MAX_DOT_SLOTS = 8
 
@@ -147,6 +147,22 @@ local function CreateBossFrame(frameID, parent)
     btn.cast = cast
     btn.castText = castText
 
+    -- 玩家自己的施法条 —— 紧贴 boss 框下方（DoT 行上方那 4px），全宽青色条
+    -- 多 boss 点击切换时一眼看出"我现在的 cast 是对着哪只"
+    -- 锚点和宽度在 ApplyCompactMode 里按模式重设，这里只创建 widget
+    local pcast = CreateFrame("StatusBar", nil, btn)
+    pcast:SetSize(FRAME_WIDTH + ICON_SIZE, 4)
+    pcast:SetFrameLevel(btn:GetFrameLevel() + 5)
+    pcast:SetStatusBarTexture(SOLID)
+    pcast:SetStatusBarColor(0.30, 0.85, 1.00, 1)   -- 亮青色
+    pcast:SetMinMaxValues(0, 1)
+    pcast:SetValue(0)
+    local pcastBg = pcast:CreateTexture(nil, "BACKGROUND")
+    pcastBg:SetAllPoints(pcast)
+    pcastBg:SetColorTexture(0.05, 0.15, 0.20, 0.85)
+    pcast:Hide()
+    btn.playerCast = pcast
+
     -- DoT row container (below the row, attached to right of icon)
     local dotRow = CreateFrame("Frame", nil, btn)
     dotRow:SetSize(FRAME_WIDTH, DOT_SIZE)
@@ -223,6 +239,11 @@ local function ApplyCompactMode(btn, compact)
         btn.dotRow:ClearAllPoints()
         btn.dotRow:SetSize(COMPACT_DOT_AREA, COMPACT_HEIGHT)
         btn.dotRow:SetPoint("LEFT", btn.hp, "RIGHT", 4, 0)
+
+        -- 玩家施法条：紧凑模式没有"框外空间"，贴在 HP 条最底 2px（HP 内 OVERLAY）
+        btn.playerCast:ClearAllPoints()
+        btn.playerCast:SetSize(COMPACT_HP_WIDTH, 2)
+        btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
     else
         btn:SetSize(ICON_SIZE + FRAME_WIDTH, FRAME_HEIGHT)
         btn.icon:Show()
@@ -239,9 +260,19 @@ local function ApplyCompactMode(btn, compact)
         btn.cast:SetSize(FRAME_WIDTH, CAST_HEIGHT)
         btn.cast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
 
+        -- DoT 行紧贴 boss 框下方（恢复原位，无空隙）
         btn.dotRow:ClearAllPoints()
         btn.dotRow:SetSize(FRAME_WIDTH, DOT_SIZE)
         btn.dotRow:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", ICON_SIZE + 1, -2)
+
+        -- 玩家施法条：叠在 HP 条最底部，**最顶层 z-order**
+        -- - 仅 HP 区域宽（不占头像区）
+        -- - 4px 高，覆盖 boss 施法条底部 4px；boss 条上方 6px 仍可见
+        -- - 单独显示时呈现纯青色 4px 条；与 boss 条同时显示时 stack 在底（青上、黄下藏在青条下方）
+        --   但 boss 条 10 - 4 = 6px 仍然在青条上方露出来
+        btn.playerCast:ClearAllPoints()
+        btn.playerCast:SetSize(FRAME_WIDTH, 4)
+        btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
     end
     btn.compact = compact
     -- 现有 DoT 槽位也得跟着重新排
@@ -501,6 +532,20 @@ local function UpdateHealthFromUnit(btn, unit)
 end
 MBT.UpdateHealthFromUnit = UpdateHealthFromUnit
 
+-- 根据玩家施法条是否在显示，调整 boss 施法名的垂直位置
+-- - 玩家没施法：文字在 boss 条 10px 中心（y 偏移 0）
+-- - 玩家正施法：文字上移到 boss 条上方 6px 区域中心，避免被覆盖（y 偏移 +2）
+local function UpdateBossCastTextPosition(btn)
+    if not btn or not btn.castText then return end
+    btn.castText:ClearAllPoints()
+    if btn.playerCast and btn.playerCast:IsShown() then
+        btn.castText:SetPoint("CENTER", btn.cast, "CENTER", 0, 2)
+    else
+        btn.castText:SetPoint("CENTER", btn.cast, "CENTER", 0, 0)
+    end
+end
+MBT.UpdateBossCastTextPosition = UpdateBossCastTextPosition
+
 -- Cast bar drive
 local function StartCast(btn, pkg)
     btn.cast:SetMinMaxValues(0, math.max(pkg.iDuration or 1, 0.01))
@@ -509,6 +554,7 @@ local function StartCast(btn, pkg)
     btn.cast.endTime   = pkg.iExpirationTime
     btn.castText:SetText(pkg.sSpellName or "")
     btn.cast:Show()
+    UpdateBossCastTextPosition(btn)
     btn.cast:SetScript("OnUpdate", function(self)
         if not self.endTime then self:Hide(); return end
         local now = GetTime()
