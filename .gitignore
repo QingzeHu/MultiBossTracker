@@ -1,0 +1,33 @@
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# 操作系统垃圾
+.DS_Store
+Thumbs.db
+
+# 日志 / 备份
+*.log
+*.bak
+
+# AI 助手会话 / 配置（个人开发环境，不入库）
+.claude/
+.cursor/
+.aider*
+CLAUDE.md
+.github/copilot/
+
+# 开发文档（不上传给最终用户）
+CHANGELOG.md
+PRO_PLAN.md
+
+# 外部参考源（仅本地保留，从不分发）
+_wa_source/
+
+# 打包输出
+*.zip
+*.tar.gz
+release/
+build/
