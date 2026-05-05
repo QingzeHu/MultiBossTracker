@@ -595,8 +595,22 @@ local function BuildOptionsTable()
                         get = function() return MBT.db.profile.bShowPlayerCast end,
                         set = function(_, v) MBT.db.profile.bShowPlayerCast = v end,
                     },
+                    bShowRangeIndicator = {
+                        order = 24, type = "toggle", name = "显示距离不足提示",
+                        desc = "boss 不在你最远技能射程内时，HP 条右上角显示红色\"外\"字。\n基于职业最远射程的代表性技能（暗影箭 / 寒冰箭 / 心灵震爆 / 闪电箭 / 自动射击 / 愤怒 / 死亡缠绕）。\n会自动算上天赋 / 雕文 / buff 加成（IsSpellInRange API 是 live 的）。",
+                        width = "full",
+                        get = function() return MBT.db.profile.bShowRangeIndicator end,
+                        set = function(_, v) MBT.db.profile.bShowRangeIndicator = v end,
+                    },
+                    bShowFacingWarning = {
+                        order = 25, type = "toggle", name = "显示朝向错误提示",
+                        desc = "你点击 boss 框体施法但游戏返回\"必须面对目标\"错误时，对应框体右上角闪 1.5 秒红色\"面\"字。\n注：WoW API 不支持 proactive 朝向检测（防作弊），只能在用户尝试施法失败后反应式提示。",
+                        width = "full",
+                        get = function() return MBT.db.profile.bShowFacingWarning end,
+                        set = function(_, v) MBT.db.profile.bShowFacingWarning = v end,
+                    },
                     fHealthUpdateInterval = {
-                        order = 24, type = "range", name = "血量刷新间隔（秒）",
+                        order = 26, type = "range", name = "血量刷新间隔（秒）",
                         desc = "数值越小越实时，但开销越高。\n默认 0.1 秒 —— DPS 输出时血量是关键判断依据（处决线、阶段切换），建议保持低值。\n0 = 完全关闭血量更新",
                         width = "full",
                         min = 0, max = 5, step = 0.1,

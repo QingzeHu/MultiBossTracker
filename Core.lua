@@ -83,6 +83,8 @@ MBT.defaults = {
         bShowMissingDoTs = true,         -- show DoT slots even when not applied (faded)
         bShowNPCCasts = true,            -- show enemy castbar — 默认开启（boss 读条时自动显示，平时不挡）
         bShowPlayerCast = true,          -- 顶部青色条显示玩家自己的 cast 在哪只 boss 上 —— 多目标切换关键
+        bShowRangeIndicator = true,      -- HP 右上角 "外" 字提示 boss 不在你最远技能射程内
+        bShowFacingWarning = true,       -- HP 右上角 "面" 字闪烁提示朝向错误（点击施法返回 facing 错误时）
         bUse3DPortrait = true,           -- 头像类型：true=3D 模型，false=2D 静态贴图（更省 GPU）
         fHealthUpdateInterval = 0.1,     -- seconds between raid scans (DPS 输出时血量很关键，默认尽量实时)
         fUpdateRate = 0.1,               -- HP bar smoothing rate

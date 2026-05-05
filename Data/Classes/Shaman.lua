@@ -33,5 +33,6 @@ tAuraData.tSpellsInfos = {
     },
 }
 tAuraData.fExecuteRange = 0
+tAuraData.iRangeCheckSpellID = 403    -- 闪电箭 40y
 
 MBT:RegisterClassData("SHAMAN", tAuraData)

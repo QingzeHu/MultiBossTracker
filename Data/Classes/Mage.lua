@@ -18,5 +18,6 @@ tAuraData.tSpellsInfos = {
     ["Pyroblast"]   = { iDuration=12, sName="Pyroblast",   iIcon=135808, iColorR=0.796, iColorG=0.147, iColorB=0.147 },
 }
 tAuraData.fExecuteRange = 0.35
+tAuraData.iRangeCheckSpellID = 116    -- 寒冰箭 40y
 
 MBT:RegisterClassData("MAGE", tAuraData)

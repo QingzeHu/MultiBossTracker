@@ -59,5 +59,6 @@ tAuraData.tSpellsInfos = {
     },
 }
 tAuraData.fExecuteRange = 0
+tAuraData.iRangeCheckSpellID = 8092   -- 心灵震爆 40y
 
 MBT:RegisterClassData("PRIEST", tAuraData)

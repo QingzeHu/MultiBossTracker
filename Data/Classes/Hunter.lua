@@ -55,5 +55,6 @@ tAuraData.tSpellsInfos = {
     },
 }
 tAuraData.fExecuteRange = 0.2
+tAuraData.iRangeCheckSpellID = 75     -- 自动射击 40y
 
 MBT:RegisterClassData("HUNTER", tAuraData)

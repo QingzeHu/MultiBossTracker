@@ -43,6 +43,7 @@ Dispatchers\HealthUpdater.lua
 Frames\BossFrame.lua
 Frames\Layout.lua
 Frames\PlayerCastTracker.lua
+Frames\RangeChecker.lua
 ClickCast.lua
 
 Options\Options.lua

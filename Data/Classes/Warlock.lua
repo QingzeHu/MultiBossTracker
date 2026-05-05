@@ -153,5 +153,6 @@ tAuraData.tComboGlows = {
 }
 
 tAuraData.fExecuteRange = 0.25
+tAuraData.iRangeCheckSpellID = 686    -- 暗影箭 40y
 
 MBT:RegisterClassData("WARLOCK", tAuraData)

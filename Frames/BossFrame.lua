@@ -61,6 +61,18 @@ local function CreateBossFrame(frameID, parent)
     local btn = CreateFrame("Button", "MultiBossTracker_Slot" .. frameID, parent, templates)
     btn:SetSize(FRAME_WIDTH + ICON_SIZE, FRAME_HEIGHT)
     btn:RegisterForClicks("AnyUp")
+    -- 记录最近一次点击：UI_ERROR_MESSAGE 收到 facing 错误时用来定位是哪个 boss 框点的
+    -- 同时：如果这个 boss 处于"facing 模式"（最近有过 facing 错误），用户继续狂点视为继续在错
+    --      → 直接刷新 1.5s 闪烁 + 续期模式过期时间。绕过 UI_ERROR_MESSAGE 的节流抑制
+    btn:HookScript("OnClick", function(self)
+        local now = GetTime()
+        MBT._lastClickedFrameID = self.frameID
+        MBT._lastClickedTime = now
+        if self._facingModeExpiry and now < self._facingModeExpiry then
+            self._facingModeExpiry = now + 5
+            if MBT.RefreshFacingFlash then MBT.RefreshFacingFlash(self) end
+        end
+    end)
     btn:SetAttribute("*type1", "macro")
     btn:SetAttribute("*type2", "macro")
     btn:SetAttribute("*type3", "macro")
@@ -133,6 +145,14 @@ local function CreateBossFrame(frameID, parent)
     pctText:SetTextColor(1, 1, 1, 1)
     pctText:SetJustifyH("RIGHT")
     btn.pctText = pctText
+
+    -- 状态提示文字：HP 内嵌右上角，单一 FontString 按状态切显示
+    -- 状态："range" → 黄色"超出范围"（持续）；"facing" → 橙色"面对目标"（闪 1.5s）
+    -- facing 闪烁期间优先级高于 range（更紧迫的信号）
+    local statusText = hp:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statusText:SetPoint("TOPRIGHT", hp, "TOPRIGHT", -3, -2)
+    statusText:SetText("")
+    btn.statusText = statusText
 
     -- Cast bar — 叠在 HP 条底部 OVERLAY 层
     local cast = CreateFrame("StatusBar", nil, btn)

@@ -61,5 +61,6 @@ tAuraData.tSpellsInfos = {
     },
 }
 tAuraData.fExecuteRange = 0
+tAuraData.iRangeCheckSpellID = 5176   -- 愤怒 40y
 
 MBT:RegisterClassData("DRUID", tAuraData)

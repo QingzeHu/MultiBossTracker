@@ -33,5 +33,6 @@ tAuraData.tSpellsInfos = {
     },
 }
 tAuraData.fExecuteRange = 0.0
+tAuraData.iRangeCheckSpellID = 47541  -- 死亡缠绕 30y
 
 MBT:RegisterClassData("DEATHKNIGHT", tAuraData)
