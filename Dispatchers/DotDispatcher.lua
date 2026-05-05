@@ -50,18 +50,24 @@ local function FindUnitForGUID(guid)
     return nil
 end
 
--- 返回 (duration, expirationTime) 或 (nil, nil)
+-- 返回 { duration, expirationTime, icon, count } 或 nil
+-- 一次性把 boss 身上 debuff 的真实数据全拿回来 —— duration、图标、层数
 local function GetRealAuraInfo(targetGUID, spellID)
     local unit = FindUnitForGUID(targetGUID)
-    if not unit then return nil, nil end
+    if not unit then return nil end
     for i = 1, 40 do
-        local _, _, _, _, duration, expirationTime, source, _, _, sid = UnitDebuff(unit, i)
-        if not expirationTime then return nil, nil end
+        local _, icon, count, _, duration, expirationTime, source, _, _, sid = UnitDebuff(unit, i)
+        if not expirationTime then return nil end
         if sid == spellID and source == "player" then
-            return duration, expirationTime
+            return {
+                duration = duration,
+                expirationTime = expirationTime,
+                icon = icon,
+                count = count,
+            }
         end
     end
-    return nil, nil
+    return nil
 end
 
 local function RemoveDebuffFromOtherFrames(self, frameID, name)
@@ -74,7 +80,7 @@ end
 
 local DotDispatcher = {}
 
-function DotDispatcher:AddDebuff(frameID, name, realDuration, realExpiration)
+function DotDispatcher:AddDebuff(frameID, name, realInfo)
     local info = GetSpellInfos(name)
     if not info then return end
     if info.tRefreshAura and info.tRefreshAura.bEnabled then
@@ -84,11 +90,13 @@ function DotDispatcher:AddDebuff(frameID, name, realDuration, realExpiration)
     if info.bRemoveFromOtherFrames then
         RemoveDebuffFromOtherFrames(self, frameID, name)
     end
-    -- 优先用 UnitDebuff 读到的真实数值；找不到 unit 时退回估算
-    local duration, expirationTime
-    if realDuration and realExpiration and realDuration > 0 then
-        duration       = realDuration
-        expirationTime = realExpiration
+    -- 优先用 UnitDebuff 读到的真实 duration / icon / 层数；找不到 unit 时退回静态配置
+    local duration, expirationTime, icon, stacks
+    if realInfo and realInfo.duration and realInfo.duration > 0 then
+        duration       = realInfo.duration
+        expirationTime = realInfo.expirationTime
+        icon           = realInfo.icon
+        stacks         = realInfo.count
     else
         duration       = GetDoTDuration(name)
         expirationTime = GetTime() + duration
@@ -99,11 +107,13 @@ function DotDispatcher:AddDebuff(frameID, name, realDuration, realExpiration)
         duration      = duration,
         expirationTime = expirationTime,
         name          = info.sName,
-        icon          = info.iIcon,
+        icon          = icon or info.iIcon,            -- runtime 优先，静态作 fallback
+        iStacks       = (stacks and stacks > 1) and stacks or nil,
         iOrder        = info.iOrder,
         iColorR       = info.iColorR,
         iColorG       = info.iColorG,
         iColorB       = info.iColorB,
+        iGlowAtStacks = info.iGlowAtStacks,
         autoHide      = not MBT.db.profile.bShowMissingDoTs,
     }
     MBT:FireEvent("MultiBossTracker_DoTUpdate", "Add", frameID, pkg)
@@ -114,6 +124,8 @@ function DotDispatcher:AddStack(frameID, name, stacks)
     if not info then return end
     MBT:FireEvent("MultiBossTracker_DoTUpdate", "Stack", frameID, {
         sSpellName = name, sSlotName = info.sSlotName, iStacks = stacks,
+        iGlowAtStacks = info.iGlowAtStacks,
+        iColorR = info.iColorR, iColorG = info.iColorG, iColorB = info.iColorB,
     })
 end
 
@@ -156,10 +168,10 @@ local function HandleSpellCLEU(spellID, frameID, args)
     local name = tAuraData.tDotAuras[spellID]
 
     if sub == "SPELL_AURA_APPLIED" or sub == "SPELL_AURA_REFRESH" then
-        -- 直接问 WoW 引擎该 DoT 在 boss 身上的真实剩余时间
+        -- 直接问 WoW 引擎该 DoT 在 boss 身上的真实数据：duration / 图标 / 当前层数
         local targetGUID = args[8]
-        local realDur, realExp = GetRealAuraInfo(targetGUID, spellID)
-        DotDispatcher:AddDebuff(frameID, name, realDur, realExp)
+        local realInfo = GetRealAuraInfo(targetGUID, spellID)
+        DotDispatcher:AddDebuff(frameID, name, realInfo)
     elseif sub == "SPELL_AURA_APPLIED_DOSE" then
         local stack = args[16]
         DotDispatcher:AddStack(frameID, name, stack)

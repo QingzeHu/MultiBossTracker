@@ -50,3 +50,28 @@ MultiBossTracker/
 - **DoT 时长精度**：CLEU 触发时优先 `UnitDebuff` 读取真实 duration / expirationTime；找不到 unit token 时回退用 `UnitSpellHaste` 计算估算时长。
 - **本地化**：内部数据用英文 key，运行时翻译为中文匹配 `GetSubZoneText()` 返回值。
 - **事件总线**：自实现的 `MBT:FireEvent` / `MBT:RegisterMDFEvent` pub/sub。
+
+## 第三方库
+
+`Libs/` 下包含的所有第三方依赖，均通过 LibStub 加载：
+
+| 库 | 用途 | 来源 |
+|---|---|---|
+| Ace3 全套（AceAddon / AceConfig / AceDB / AceEvent / AceTimer / AceConsole / AceGUI / AceDBOptions / CallbackHandler / LibStub）| 插件框架 | https://www.wowace.com/projects/ace3 |
+| LibDataBroker-1.1 / LibDBIcon-1.0 | 小地图按钮 | https://github.com/tekkub/libdatabroker-1-1 |
+| **LibCustomGlow-1.0** | 4 种风格的 glow 特效（PixelGlow / AutoCastGlow / ButtonGlow / ProcGlow），WeakAuras / ElvUI 同款 | https://github.com/Stanzilla/LibCustomGlow |
+
+LibCustomGlow 调用方式（LCG = `LibStub("LibCustomGlow-1.0")`）：
+
+```lua
+LCG.AutoCastGlow_Start(frame, {r,g,b,a}, N, frequency, scale, xOff, yOff, key)
+LCG.AutoCastGlow_Stop(frame, key)
+
+LCG.PixelGlow_Start(frame, color, N, frequency, length, thickness, xOff, yOff, border, key)
+LCG.ButtonGlow_Start(frame, color, frequency)
+LCG.ProcGlow_Start(frame, options)
+```
+
+库本身要求 Legion+ 的 `CreateTexturePool` / `CreateFramePool` API；MoP 客户端没有这俩，
+所以在 `Libs/LibCustomGlow-1.0/Compat.lua` 里写了个 polyfill 顶住，**不修改 lib 本体**。
+将来升级 lib 直接覆盖 `LibCustomGlow-1.0.lua` 即可。

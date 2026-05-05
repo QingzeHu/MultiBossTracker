@@ -470,7 +470,7 @@ local SPELL_BLACKLIST_KEYS = {
     "Corruption", "Faerie Fire", "Living Bomb", "Insect Swarm", "Shadow Word: Pain",
     "Immolation", "Unstable Affliction", "Seed of Corruption", "Flame Shock",
     "Devouring Plague", "Moonfire", "Shadow Embrace", "Haunt", "Vampiric Touch",
-    "Curse of Doom", "Curse of Agony",
+    "Curse of Doom", "Curse of Agony", "Ember Brand", "Shadow Brand",
 }
 -- 黑名单显示名（中文）
 local SPELL_BLACKLIST_LABELS = {
@@ -490,6 +490,8 @@ local SPELL_BLACKLIST_LABELS = {
     ["Vampiric Touch"]      = "吸血鬼之触",
     ["Curse of Doom"]       = "厄运诅咒",
     ["Curse of Agony"]      = "痛苦诅咒",
+    ["Ember Brand"]         = "余烬印记",
+    ["Shadow Brand"]        = "暗影印记",
 }
 
 local function BuildOptionsTable()

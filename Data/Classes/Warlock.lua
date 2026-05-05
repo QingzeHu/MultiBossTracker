@@ -4,15 +4,17 @@ local addonName, MBT = ...
 local tAuraData = {}
 
 tAuraData.tDotOrderIndices = {
-    [1] = "None",
-    [2] = "Corruption",
-    [3] = "Haunt",
-    [4] = "Curse of Agony",
-    [5] = "Curse of Doom",
-    [6] = "Unstable Affliction",
-    [7] = "Shadow Embrace",
-    [8] = "Immolation",
-    [9] = "Seed of Corruption",
+    [1]  = "None",
+    [2]  = "Corruption",
+    [3]  = "Haunt",
+    [4]  = "Curse of Agony",
+    [5]  = "Curse of Doom",
+    [6]  = "Unstable Affliction",
+    [7]  = "Shadow Embrace",
+    [8]  = "Immolation",
+    [9]  = "Seed of Corruption",
+    [10] = "Ember Brand",
+    [11] = "Shadow Brand",
 }
 
 tAuraData.tDotAuras = {
@@ -40,6 +42,9 @@ tAuraData.tDotAuras = {
     [1490] = "Curse of the Elements", [11721] = "Curse of the Elements",
     [11722] = "Curse of the Elements", [27228] = "Curse of the Elements",
     [47865] = "Curse of the Elements",
+    -- 自定义印记 debuff（私服扩展）
+    [1295144] = "Ember Brand",
+    [1295140] = "Shadow Brand",
 }
 
 tAuraData.tDamageTriggers = {
@@ -119,6 +124,31 @@ tAuraData.tSpellsInfos = {
             tRefreshTalent = { iRow = 1, iIndex = 24 },
             tAuras = { "Corruption" },
         },
+    },
+    ["Ember Brand"] = {
+        iDuration = 12, sName = "Ember Brand", iIcon = 135265,
+        iColorR = 0.980, iColorG = 0.350, iColorB = 0.100,
+        iGlowAtStacks = 6,    -- 单印记满 6 → DoT 图标上轻微旋转火花（信息性）
+    },
+    ["Shadow Brand"] = {
+        iDuration = 12, sName = "Shadow Brand", iIcon = 425951,
+        iColorR = 0.350, iColorG = 0.050, iColorB = 0.650,
+        iGlowAtStacks = 6,
+    },
+}
+
+-- Combo glow 配置：多个 DoT 同时满足条件时，整个 boss 框体亮起特效
+-- 用途：双 6 层印记 = 终结技窗口，给玩家一个"现在可以放！"的强信号
+tAuraData.tComboGlows = {
+    {
+        sName       = "WarlockBrandFinisher",
+        tSpells     = {"Ember Brand", "Shadow Brand"},
+        iAtStacks   = 6,
+        sStyle      = "pixel",        -- pixel | autocast | button
+        tColor      = {1.0, 0.6, 0.1, 1.0},   -- 暖橙 → 紧迫感
+        fFrequency  = 0.5,            -- 每秒 0.5 周期 = 2 秒一圈，醒目但不晕
+        iThickness  = 2,
+        iDots       = 8,              -- 8 颗像素点沿框体周长流动
     },
 }
 

@@ -206,7 +206,9 @@ MBT.defaults = {
 
         -- Per-class DoT order (1=topmost).
         tForceDoTOrder = {
-            tWarlock = { [1]=1, [2]=8, [3]=3, [4]=2, [5]=5, [6]=4, [7]=7, [8]=6 },
+            -- pos1=火焰印记(10) pos2=暗影印记(11) pos3=Immolation(8) pos4=Haunt(3) pos5=Corruption(2) pos6=Doom(5) pos7=Agony(4) pos8=Shadow Embrace(7)
+            -- 8 个槽位填满；Unstable Affliction 默认不在列表，玩家可在"DoT 排序"里手动加入
+            tWarlock = { [1]=10, [2]=11, [3]=8, [4]=3, [5]=2, [6]=5, [7]=4, [8]=7 },
             tMage = {},
             tDeathKnight = {},
             tPriest = {},

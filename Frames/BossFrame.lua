@@ -211,6 +211,10 @@ local function CreateBossFrame(frameID, parent)
         stacks:SetTextColor(1, 1, 1, 1)
         f.stacks = stacks
 
+        -- 满层高亮：用 Blizzard 原生的 ActionButton_ShowOverlayGlow / HideOverlayGlow
+        -- 就是动作条上技能 proc 时那一圈金色脉动 + 火花特效，全游戏一致
+        -- 不需要自定义贴图/动画 —— 在 UpdateSlotGlow 里直接调即可
+
         f:Hide()
         return f
     end
@@ -372,6 +376,76 @@ cdUpdater:SetScript("OnUpdate", function(_, elapsed)
     end
 end)
 
+-- LibCustomGlow（WeakAuras / ElvUI 通用 glow 库）
+local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
+
+-- 单个 DoT 槽位高亮：仅当 spell 配了 iGlowAtStacks 时启用
+-- 当前没有任何 spell 用这个 —— 印记的"双 6 终结技"信号走 combo glow（见下）
+local function UpdateSlotGlow(slot, threshold, stacks)
+    if not slot or not LCG then return end
+    local shouldOn = threshold and stacks and stacks >= threshold
+    if shouldOn then
+        if not slot.glowOn then
+            LCG.AutoCastGlow_Start(slot, {0.95, 0.95, 0.32, 1}, 4, 0.5, 1, 0, 0, "fullstack")
+            slot.glowOn = true
+        end
+    else
+        if slot.glowOn then
+            LCG.AutoCastGlow_Stop(slot, "fullstack")
+            slot.glowOn = false
+        end
+    end
+end
+
+-- Boss 框体级 combo 高亮：多个 DoT 同时满足条件 → 整框亮起特效
+-- 数据驱动 —— 读 tAuraData.tComboGlows，所以扩展到其它职业零代码
+local function startComboGlow(btn, c)
+    if c.sStyle == "pixel" then
+        LCG.PixelGlow_Start(btn, c.tColor, c.iDots or 8, c.fFrequency or 0.5, nil, c.iThickness or 2, 0, 0, false, c.sName)
+    elseif c.sStyle == "button" then
+        LCG.ButtonGlow_Start(btn, c.tColor, c.fFrequency or 0.125)
+    else  -- autocast 默认
+        LCG.AutoCastGlow_Start(btn, c.tColor, 4, c.fFrequency or 0.5, 1, 0, 0, c.sName)
+    end
+end
+
+local function stopComboGlow(btn, c)
+    if c.sStyle == "pixel" then
+        LCG.PixelGlow_Stop(btn, c.sName)
+    elseif c.sStyle == "button" then
+        LCG.ButtonGlow_Stop(btn)
+    else
+        LCG.AutoCastGlow_Stop(btn, c.sName)
+    end
+end
+
+local function UpdateBossComboGlow(btn)
+    if not LCG or not btn then return end
+    local cd = MBT.formattedClassData
+    if not cd or not cd.tComboGlows then return end
+    btn.comboGlows = btn.comboGlows or {}
+
+    for _, combo in ipairs(cd.tComboGlows) do
+        local allReady = true
+        for _, spellName in ipairs(combo.tSpells) do
+            local slot = btn.dotSlots and btn.dotSlots[spellName]
+            local stacks = (slot and slot:IsShown()) and (slot.stackCount or 0) or 0
+            if stacks < (combo.iAtStacks or 1) then
+                allReady = false
+                break
+            end
+        end
+
+        if allReady and not btn.comboGlows[combo.sName] then
+            startComboGlow(btn, combo)
+            btn.comboGlows[combo.sName] = true
+        elseif not allReady and btn.comboGlows[combo.sName] then
+            stopComboGlow(btn, combo)
+            btn.comboGlows[combo.sName] = nil
+        end
+    end
+end
+
 -- Apply a "package" payload onto the frame's slot ("Add" semantics).
 local function ApplyDotAdd(btn, pkg)
     local slot = btn.dotSlots[pkg.sSlotName]
@@ -393,7 +467,11 @@ local function ApplyDotAdd(btn, pkg)
         slot.expirationTime = nil
         slot.timeText:SetText("")
     end
-    slot.stacks:SetText("")
+    -- 初始 APPLY 时如果 boss 身上已经多层（部分技能首次 apply 就带层数），从 pkg.iStacks 读
+    slot.stackCount = pkg.iStacks or 1
+    slot.stacks:SetText(pkg.iStacks and tostring(pkg.iStacks) or "")
+    UpdateSlotGlow(slot, pkg.iGlowAtStacks, pkg.iStacks)
+    UpdateBossComboGlow(btn)
     LayoutDotRow(btn)
 end
 MBT.ApplyDotAdd = ApplyDotAdd
@@ -411,6 +489,10 @@ MBT.ApplyDotRefresh = ApplyDotRefresh
 local function ApplyDotRemove(btn, pkg)
     local slot = btn.dotSlots[pkg.sSlotName]
     if not slot then return end
+    -- DoT 移除：层数清零，高亮收掉，combo 重新评估
+    slot.stackCount = 0
+    UpdateSlotGlow(slot, nil, nil)
+    UpdateBossComboGlow(btn)
     if MBT.db.profile.bShowMissingDoTs and not pkg.bForceClear then
         slot.tex:SetVertexColor(0.4, 0.4, 0.4)
         slot.cd:Clear()
@@ -429,7 +511,10 @@ MBT.ApplyDotRemove = ApplyDotRemove
 local function ApplyDotStack(btn, pkg)
     local slot = btn.dotSlots[pkg.sSlotName]
     if not slot then return end
+    slot.stackCount = pkg.iStacks or 1
     slot.stacks:SetText(pkg.iStacks and pkg.iStacks > 1 and tostring(pkg.iStacks) or "")
+    UpdateSlotGlow(slot, pkg.iGlowAtStacks, pkg.iStacks)
+    UpdateBossComboGlow(btn)
 end
 MBT.ApplyDotStack = ApplyDotStack
 
