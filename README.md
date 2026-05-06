@@ -2,6 +2,15 @@
 
 一屏同时显示最多 5 个 boss 的状态，支持隔空点击施法。专为多 dot / 多目标战斗设计的 WoW 插件，运行在 MoP Classic 5.5（中国官服 / 泰坦怀旧时光）。
 
+## 界面预览
+
+| 极简 | 标准 |
+|---|---|
+| ![极简模式](assets/minimal.png) | ![标准模式](assets/standard.png) |
+| 单条窄血条 + 右侧 DoT，最省空间 | 头像 + 血条 + 施法条 + 下方 DoT 行 |
+
+▶ 动画演示：[极简模式](assets/minimal.gif) · [标准模式](assets/standard.gif)
+
 ## 功能
 
 ### 核心
@@ -24,6 +33,23 @@
 - DoT 排序（每职业独立）+ DoT 黑名单（按需屏蔽）+ 隐藏单位（按副本阶段组织）
 - 血量刷新间隔（默认 0.1 秒，DPS 关键判断）
 - 各类显示开关：3D/2D 头像、Boss 施法条、玩家施法条、距离 / 朝向提示、未上的 DoT 占位、小地图按钮
+
+## 设置面板预览
+
+| 总设置 | DoT 排序 |
+|---|---|
+| ![总设置](assets/screenshots/settings.png) | ![DoT 排序](assets/screenshots/dot-order.png) |
+| 外观 / 显示 / 位置等通用选项 | 每职业独立的 DoT 左右顺序 |
+
+| DoT 黑名单 | 点击施法 |
+|---|---|
+| ![DoT 黑名单](assets/screenshots/dot-blacklist.png) | ![点击施法](assets/screenshots/click-cast.png) |
+| 屏蔽不想看的 DoT，按职业分组 | 鼠标按键 + 修饰键自由绑定 |
+
+| 隐藏单位 | 配置保存与分享 |
+|---|---|
+| ![隐藏单位](assets/screenshots/hide-units.png) | ![导入导出](assets/screenshots/profile-share.png) |
+| 按副本阶段勾选要隐藏的 boss / 小怪 | 配置档导出成字符串发给朋友 |
 
 ## 目录结构
 
