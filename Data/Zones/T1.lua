@@ -26,7 +26,7 @@ tZonesData.tZones = {
             },
             [669] = {
                 ["A"] = { sNPCID = "12098", sTarName = "萨弗隆先驱者", iIcon = 254652 },
-                ["B"] = { sNPCID = "11662", sTarName = "火妖祭司",     iIcon = 134301 },
+                ["B"] = { sNPCID = "11662", sTarName = "烈焰行者祭司", iIcon = 134301 },
             },
             [670] = {
                 ["A"] = { sNPCID = "11988", sTarName = "焚化者古雷曼格", iIcon = 133886 },

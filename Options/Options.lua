@@ -86,7 +86,7 @@ local PHASES = {
                     { name = "焚化者古雷曼格",   npcID = "11988",
                       adds = { { name = "熔火怒犬",     npcID = "11672" } } },
                     { name = "萨弗隆先驱者",     npcID = "12098",
-                      adds = { { name = "火妖祭司",     npcID = "11662" } } },
+                      adds = { { name = "烈焰行者祭司", npcID = "11662" } } },
                     { name = "管理者埃克索图斯", npcID = "12018",
                       adds = {
                           { name = "烈焰行者医师", npcID = "11663" },
