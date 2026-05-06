@@ -533,8 +533,8 @@ local function BuildOptionsTable()
                     hAppearance = { order = 10, type = "header", name = "外观" },
                     iSkin = {
                         order = 11, type = "select", name = "样式",
-                        desc = "紧凑：单条窄血条 + 右侧 DoT，没有大图标和独立施法条\n完整：图标 + HP + 施法条 + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
-                        values = { [1] = "紧凑", [2] = "完整" },
+                        desc = "极简：单条窄血条 + 右侧 DoT，没有大图标和独立施法条\n标准：图标 + HP + 施法条 + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
+                        values = { [1] = "极简", [2] = "标准" },
                         get = function() return MBT.db.profile.iSkin end,
                         set = function(_, v)
                             MBT.db.profile.iSkin = v
@@ -589,7 +589,7 @@ local function BuildOptionsTable()
                     },
                     iDotSize = {
                         order = 16, type = "range", name = "DoT 图标大小（像素）",
-                        desc = "完整模式下 DoT 图标的边长。默认 32。",
+                        desc = "标准模式下 DoT 图标的边长。默认 32。",
                         width = "full",
                         min = 20, max = 48, step = 2,
                         hidden = function() return MBT.db.profile.iSkin == 1 end,
