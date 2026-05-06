@@ -60,7 +60,8 @@ local function CreateBossFrame(frameID, parent)
     if BackdropTemplateMixin then templates = templates .. ", BackdropTemplate" end
     local btn = CreateFrame("Button", "MultiBossTracker_Slot" .. frameID, parent, templates)
     btn:SetSize(FRAME_WIDTH + ICON_SIZE, FRAME_HEIGHT)
-    btn:RegisterForClicks("AnyUp")
+    -- 显式列出 5 个按钮，避免某些 Classic 客户端 "AnyUp" 不包含 Button4/5 的边界情况
+    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
     -- 记录最近一次点击：UI_ERROR_MESSAGE 收到 facing 错误时用来定位是哪个 boss 框点的
     -- 同时：如果这个 boss 处于"facing 模式"（最近有过 facing 错误），用户继续狂点视为继续在错
     --      → 直接刷新 1.5s 闪烁 + 续期模式过期时间。绕过 UI_ERROR_MESSAGE 的节流抑制
@@ -601,8 +602,8 @@ local function ApplyZoneSlot(btn, slotData)
         btn:Hide()
         if btn.modelFrame then btn.modelFrame:ClearModel() end
         if btn.portrait2D then btn.portrait2D:SetTexture("") end
-        btn.lastModelUnit = nil
-        btn.lastPortraitUnit = nil
+        btn.lastModelGUID = nil
+        btn.lastPortraitGUID = nil
         ClearDots(btn)
         return
     end
@@ -612,8 +613,8 @@ local function ApplyZoneSlot(btn, slotData)
     -- 清掉之前的 boss 头像；HealthUpdater 找到 unit token 后会喂新数据
     if btn.modelFrame then btn.modelFrame:ClearModel() end
     if btn.portrait2D then btn.portrait2D:SetTexture("") end
-    btn.lastModelUnit = nil
-    btn.lastPortraitUnit = nil
+    btn.lastModelGUID = nil
+    btn.lastPortraitGUID = nil
     -- 切换 boss 时清掉旧高亮，下次 UpdateTargetHighlight 会重新判断
     MBT:HighlightFrame(btn, false)
     btn.nameText:SetText(slotData.sTarName or "?")
@@ -640,19 +641,25 @@ local function UpdateHealthFromUnit(btn, unit)
     end
 
     -- 顺便更新头像 —— 3D 模型和 2D 贴图都更新，这样切换模式立即生效。
-    if btn.modelFrame and btn.lastModelUnit ~= unit then
-        btn.modelFrame:SetUnit(unit)
-        if btn.modelFrame.SetPortraitZoom then
-            btn.modelFrame:SetPortraitZoom(1)   -- 头肩特写
+    -- 关键：用 GUID 而不是 unit token 比对。HealthUpdater 在团战时每 0.1s 会换不同的 raidNNtarget
+    -- 来定位同一只 boss，token 一直变但 GUID 不变。如果按 token 比，就会每 0.1s 重新 SetUnit 一次，
+    -- 表现为头像鬼畜抖动。
+    local guid = UnitGUID(unit)
+    if guid then
+        if btn.modelFrame and btn.lastModelGUID ~= guid then
+            btn.modelFrame:SetUnit(unit)
+            if btn.modelFrame.SetPortraitZoom then
+                btn.modelFrame:SetPortraitZoom(1)   -- 头肩特写
+            end
+            if btn.modelFrame.RefreshCamera then
+                btn.modelFrame:RefreshCamera()
+            end
+            btn.lastModelGUID = guid
         end
-        if btn.modelFrame.RefreshCamera then
-            btn.modelFrame:RefreshCamera()
+        if btn.portrait2D and btn.lastPortraitGUID ~= guid then
+            SetPortraitTexture(btn.portrait2D, unit)
+            btn.lastPortraitGUID = guid
         end
-        btn.lastModelUnit = unit
-    end
-    if btn.portrait2D and btn.lastPortraitUnit ~= unit then
-        SetPortraitTexture(btn.portrait2D, unit)
-        btn.lastPortraitUnit = unit
     end
 end
 MBT.UpdateHealthFromUnit = UpdateHealthFromUnit
