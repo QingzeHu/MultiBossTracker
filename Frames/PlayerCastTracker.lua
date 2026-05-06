@@ -12,6 +12,9 @@ local addonName, MBT = ...
 
 local pendingTargetName = nil   -- 最近一次 SENT 的目标名（本地化字符串）
 local activeBtn = nil           -- 当前正在显示 cast 进度的框体
+local activeCastGUID = nil      -- 当前正在显示的那次 cast 的 GUID
+                                -- 用来过滤"读条过程中乱按其他技能"产生的 FAILED 事件 ——
+                                -- 那个 FAILED 是给被拒的第二个 cast 的，不能拿来关当前在跑的条
 
 -- 按本地化名字找当前可见的 boss 框
 local function findFrameByName(name)
@@ -97,15 +100,21 @@ f:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 f:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
 f:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
 
-f:SetScript("OnEvent", function(_, event, unit, ...)
+f:SetScript("OnEvent", function(_, event, unit, arg2, arg3)
     if unit ~= "player" then return end
     -- 用户关闭就完全不处理（哪怕事件来了也不画）
     if not (MBT.db and MBT.db.profile and MBT.db.profile.bShowPlayerCast) then return end
 
     if event == "UNIT_SPELLCAST_SENT" then
-        -- arg1=unit(已 strip), arg2=targetName, arg3=castGUID, arg4=spellID
-        pendingTargetName = ...
-    elseif event == "UNIT_SPELLCAST_START" then
+        -- SENT 的 arg 排列特殊：arg2=targetName, arg3=castGUID, arg4=spellID
+        pendingTargetName = arg2
+        return
+    end
+
+    -- 其他所有 UNIT_SPELLCAST_* 事件的 arg 排列都是：unit, castGUID, spellID
+    local castGUID = arg2
+
+    if event == "UNIT_SPELLCAST_START" then
         local btn = findFrameByName(pendingTargetName)
         if btn then
             local _, _, _, startMS, endMS = UnitCastingInfo("player")
@@ -113,6 +122,7 @@ f:SetScript("OnEvent", function(_, event, unit, ...)
             stopCastVisual(activeBtn)
             startCastVisual(btn, duration)
             activeBtn = btn
+            activeCastGUID = castGUID
         end
     elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
         local btn = findFrameByName(pendingTargetName)
@@ -122,24 +132,34 @@ f:SetScript("OnEvent", function(_, event, unit, ...)
             stopCastVisual(activeBtn)
             startChannelVisual(btn, duration)
             activeBtn = btn
+            activeCastGUID = castGUID
         end
     elseif event == "UNIT_SPELLCAST_STOP"
         or event == "UNIT_SPELLCAST_FAILED"
         or event == "UNIT_SPELLCAST_INTERRUPTED"
         or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
+        -- 关键修复：只对当前显示中的那次 cast 的事件做反应。
+        -- 读条过程中乱按第二个施法技能，那个被拒的 cast 也会冒出 FAILED ——
+        -- 不过滤就会把还在跑的第一条 cast 给收掉。
+        if activeCastGUID and castGUID and castGUID ~= activeCastGUID then return end
         stopCastVisual(activeBtn)
         activeBtn = nil
+        activeCastGUID = nil
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-        if activeBtn then
-            -- 读条 / 引导完成：bar 已经填满，直接收掉
+        if activeBtn and activeCastGUID and castGUID == activeCastGUID then
+            -- 当前显示中的 cast 完成：bar 已经填满，直接收掉
             stopCastVisual(activeBtn)
             activeBtn = nil
-        else
+            activeCastGUID = nil
+            pendingTargetName = nil
+        elseif not activeBtn then
             -- 瞬发：SENT 后没 START，直接 SUCCEEDED —— 闪一下表示"刚落到这只 boss 上"
             local btn = findFrameByName(pendingTargetName)
             if btn then flashCastVisual(btn) end
+            pendingTargetName = nil
         end
-        pendingTargetName = nil
+        -- 否则：有 activeBtn 但 GUID 不匹配 —— 别的瞬发法术成功了（比如读条期间的 off-GCD），
+        -- 不要影响当前正在跑的 cast 视觉条
     end
 end)
 
@@ -148,5 +168,6 @@ MBT:RegisterMDFEvent("STATUS", function()
     if not (MBT.db.profile.bShowPlayerCast) and activeBtn then
         stopCastVisual(activeBtn)
         activeBtn = nil
+        activeCastGUID = nil
     end
 end)
