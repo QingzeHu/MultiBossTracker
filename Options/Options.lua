@@ -533,12 +533,14 @@ local function BuildOptionsTable()
                     hAppearance = { order = 10, type = "header", name = "外观" },
                     iSkin = {
                         order = 11, type = "select", name = "样式",
-                        desc = "紧凑：单条窄血条 + 右侧 DoT，没有大图标和独立施法条\n完整：图标 + HP + 施法条 + 下方 DoT 行",
+                        desc = "紧凑：单条窄血条 + 右侧 DoT，没有大图标和独立施法条\n完整：图标 + HP + 施法条 + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
                         values = { [1] = "紧凑", [2] = "完整" },
                         get = function() return MBT.db.profile.iSkin end,
                         set = function(_, v)
                             MBT.db.profile.iSkin = v
                             if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
+                            -- 通知 AceConfig 重新渲染：hidden 函数会重新求值，无关选项会立刻消失/出现
+                            AceConfigRegistry:NotifyChange("MultiBossTracker")
                         end,
                     },
                     bReverseGrowth = {
@@ -553,9 +555,10 @@ local function BuildOptionsTable()
                     },
                     fRowGap = {
                         order = 13, type = "range", name = "Boss 框体之间的间距（像素）",
-                        desc = "调整两个相邻 boss 行之间的纵向空白。值越大间隔越宽，0 = 紧贴在一起。\n（仅在 完整 外观下生效，紧凑模式固定为紧凑间距）",
+                        desc = "调整两个相邻 boss 行之间的纵向空白。值越大间隔越宽，0 = 紧贴在一起。",
                         width = "full",
                         min = 0, max = 80, step = 1,
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.fRowGap end,
                         set = function(_, v)
                             MBT.db.profile.fRowGap = v
@@ -566,6 +569,7 @@ local function BuildOptionsTable()
                     bUse3DPortrait = {
                         order = 14, type = "toggle", name = "使用 3D 头像",
                         desc = "勾选：显示 boss 的实时 3D 模型（自动旋转，更生动）\n取消：改用 2D 静态头像（性能开销更低，可提升帧数）",
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.bUse3DPortrait end,
                         set = function(_, v)
                             MBT.db.profile.bUse3DPortrait = v
@@ -585,9 +589,10 @@ local function BuildOptionsTable()
                     },
                     iDotSize = {
                         order = 16, type = "range", name = "DoT 图标大小（像素）",
-                        desc = "完整模式下 DoT 图标的边长。默认 32。\n注：紧凑模式不受此设置影响（图标受行高 26px 约束，固定为 24）",
+                        desc = "完整模式下 DoT 图标的边长。默认 32。",
                         width = "full",
                         min = 20, max = 48, step = 2,
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.iDotSize end,
                         set = function(_, v)
                             MBT.db.profile.iDotSize = v
@@ -606,6 +611,7 @@ local function BuildOptionsTable()
                     bShowNPCCasts = {
                         order = 22, type = "toggle", name = "显示 Boss 施法条",
                         desc = "Boss 读条时在血条底部叠加施法进度条",
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.bShowNPCCasts end,
                         set = function(_, v) MBT.db.profile.bShowNPCCasts = v end,
                     },

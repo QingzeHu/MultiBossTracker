@@ -673,6 +673,10 @@ MBT.UpdateBossCastTextPosition = UpdateBossCastTextPosition
 
 -- Cast bar drive
 local function StartCast(btn, pkg)
+    -- 紧凑模式：按设计意图（外观选项 desc 里写明"紧凑：单条窄血条 + 右侧 DoT，
+    -- 没有大图标和独立施法条"），不显示 boss 施法条 —— 直接 no-op。
+    -- 这样 ApplyCompactMode 里的 btn.cast:Hide() 才能持续生效，不被 dispatcher 回头 Show 出来。
+    if btn.compact then return end
     btn.cast:SetMinMaxValues(0, math.max(pkg.iDuration or 1, 0.01))
     btn.cast:SetValue(0)
     btn.cast.startTime = GetTime()
@@ -695,6 +699,8 @@ end
 MBT.StartCast = StartCast
 
 local function EndCast(btn, pkg)
+    -- 紧凑模式没显示，直接返回（castText 也不需要写）
+    if btn.compact then return end
     btn.castText:SetText(pkg and pkg.sSpellName or "")
     btn.cast:Hide()
     btn.cast:SetScript("OnUpdate", nil)
