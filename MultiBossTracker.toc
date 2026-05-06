@@ -46,4 +46,5 @@ Frames\PlayerCastTracker.lua
 Frames\RangeChecker.lua
 ClickCast.lua
 
+Options\ImportExport.lua
 Options\Options.lua

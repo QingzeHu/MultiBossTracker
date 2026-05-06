@@ -763,6 +763,7 @@ local function BuildOptionsTable()
                 end)(),
             },
 
+
             hide = {
                 order = 5, type = "group", name = "隐藏单位",
                 childGroups = "tree",
@@ -785,6 +786,27 @@ local function BuildOptionsTable()
     opts.args.profiles = AceDBOptions:GetOptionsTable(MBT.db)
     opts.args.profiles.order = 100
     opts.args.profiles.name = "配置档"
+
+    -- 把"导入 / 导出"追加到配置档 tab 末尾。AceDBOptions 默认 args 的 order 都在 80
+    -- 以内（profile 选择 / 复制 / 重置），用 200+ 让它们落在最下面
+    local pargs = opts.args.profiles.args
+    pargs.mbt_imexport_header = {
+        order = 200, type = "header", name = "导入 / 导出",
+    }
+    pargs.mbt_imexport_intro = {
+        order = 201, type = "description", fontSize = "medium",
+        name = "把当前配置档导出成字符串发给朋友，或粘贴朋友给你的字符串导入。\n导入时按字符串里附带的配置档名建立新配置档；同名会被直接覆盖。\n",
+    }
+    pargs.mbt_imexport_export = {
+        order = 202, type = "execute", name = "打开导出窗口",
+        desc = "弹出独立窗口显示当前配置档的导出字符串，可全选复制",
+        func = function() MBT:ShowExportFrame() end,
+    }
+    pargs.mbt_imexport_import = {
+        order = 203, type = "execute", name = "打开导入窗口",
+        desc = "弹出独立窗口，粘贴朋友发给你的导出字符串后点 导入",
+        func = function() MBT:ShowImportFrame() end,
+    }
 
     return opts
 end
