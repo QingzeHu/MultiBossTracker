@@ -26,6 +26,7 @@ LISTING.md
 
 # 外部参考源（仅本地保留，从不分发）
 _wa_source/
+new ui design/
 
 # 打包输出
 *.zip
