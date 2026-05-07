@@ -533,13 +533,12 @@ local function BuildOptionsTable()
                     hAppearance = { order = 10, type = "header", name = "外观" },
                     iSkin = {
                         order = 11, type = "select", name = "样式",
-                        desc = "极简：单条窄血条 + 右侧 DoT，没有大图标和独立施法条\n标准：图标 + HP + 施法条 + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
+                        desc = "极简：单条窄血条 + 右侧 DoT，没有大图标和独立施法条，省屏幕\n标准：左侧头像 + HP + 施法条 overlay + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
                         values = { [1] = "极简", [2] = "标准" },
                         get = function() return MBT.db.profile.iSkin end,
                         set = function(_, v)
                             MBT.db.profile.iSkin = v
                             if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
-                            -- 通知 AceConfig 重新渲染：hidden 函数会重新求值，无关选项会立刻消失/出现
                             AceConfigRegistry:NotifyChange("MultiBossTracker")
                         end,
                     },
@@ -558,6 +557,7 @@ local function BuildOptionsTable()
                         desc = "调整两个相邻 boss 行之间的纵向空白。值越大间隔越宽，0 = 紧贴在一起。",
                         width = "full",
                         min = 0, max = 80, step = 1,
+                        -- 极简（任何主题）固定 6px；标准两个主题都用此设置
                         hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.fRowGap end,
                         set = function(_, v)
@@ -569,6 +569,7 @@ local function BuildOptionsTable()
                     bUse3DPortrait = {
                         order = 14, type = "toggle", name = "使用 3D 头像",
                         desc = "勾选：显示 boss 的实时 3D 模型（自动旋转，更生动）\n取消：改用 2D 静态头像（性能开销更低，可提升帧数）",
+                        -- 极简（任何主题）都没头像。标准下两个主题都有
                         hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.bUse3DPortrait end,
                         set = function(_, v)
@@ -589,13 +590,14 @@ local function BuildOptionsTable()
                     },
                     iDotSize = {
                         order = 16, type = "range", name = "DoT 图标大小（像素）",
-                        desc = "标准模式下 DoT 图标的边长。默认 32。",
+                        desc = "DoT 图标的边长。整框会跟着按比例放大（HP 高 / 头像 / 总宽都同步）。",
                         width = "full",
-                        min = 20, max = 48, step = 2,
-                        hidden = function() return MBT.db.profile.iSkin == 1 end,
+                        min = 16, max = 48, step = 2,
                         get = function() return MBT.db.profile.iDotSize end,
                         set = function(_, v)
                             MBT.db.profile.iDotSize = v
+                            -- 像素模式下 DoT 变化要触发整体 relayout（行高 / 头像 / 总宽都跟着变）
+                            if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
                             if MBT.UpdateDotSize then MBT:UpdateDotSize() end
                         end,
                     },
@@ -611,6 +613,7 @@ local function BuildOptionsTable()
                     bShowNPCCasts = {
                         order = 22, type = "toggle", name = "显示 Boss 施法条",
                         desc = "Boss 读条时在血条底部叠加施法进度条",
+                        -- 仅极简（任何主题）下没 boss 施法条；标准下两个主题都支持
                         hidden = function() return MBT.db.profile.iSkin == 1 end,
                         get = function() return MBT.db.profile.bShowNPCCasts end,
                         set = function(_, v) MBT.db.profile.bShowNPCCasts = v end,

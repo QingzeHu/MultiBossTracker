@@ -12,32 +12,48 @@
 local addonName, MBT = ...
 
 MBT.BossFrames = {}     -- [frameID] = BossFrame
-local FRAME_WIDTH  = 230
-local FRAME_HEIGHT = 54
-local ICON_SIZE    = 54
-local HP_HEIGHT    = 30
-local CAST_HEIGHT  = 14    -- boss 施法条高度。需≥10 让字显示，≤22 不撞 HP 中心的 name/百分比文字
-local DOT_SIZE     = 32      -- DoT 图标边长 fallback（用户没改设置时的默认）
 local MAX_DOT_SLOTS = 8
 
--- Compact 模式尺寸（紧凑外观）：单条窄血条 + 右侧贴近的 DoT 行
-local COMPACT_HEIGHT     = 26     -- 行高（同时也是 DoT 图标尺寸基准）
-local COMPACT_HP_WIDTH   = 200    -- 血条占的宽度
-local COMPACT_DOT_SIZE   = 24     -- 紧凑模式下 DoT 图标尺寸（≤ COMPACT_HEIGHT）
-local COMPACT_DOT_AREA   = 180    -- DoT 行总宽度
+-- 像素风格尺寸（唯一样式）
+-- 极简（单行）：行高 = DoT + 2px 边，HP 高 = DoT，HP 宽 160，DoT 7 个 + 6 个 2px gap
+-- 标准（双行）：行高 = 1 + HP + 1 + DoT + 1，头像方块 = 行高 - 2，HP 高 = max(30, DoT)
+local COMPACT_HP_WIDTH   = 160
+local STANDARD_HP_WIDTH  = 200
+local STANDARD_HP_HEIGHT_MIN = 30
+local STANDARD_CAST_HEIGHT = 10        -- overlay 在 HP 底
+local DOT_GAP            = 2
+local BORDER_PX          = 1            -- 元素内缩量 = bd 黑底漏出形成"1px 硬边框"
 
--- 给整个容器在紧凑模式下用的总宽度
+local HP_COLOR_NORMAL    = { 0.78, 0.18, 0.20, 1 }   -- 饱和深红
+local HP_COLOR_HIGHLIGHT = { 0.95, 0.30, 0.30, 1 }   -- 当前 target 高亮（更亮）
+local CAST_COLOR         = { 0.96, 0.78, 0.27, 1 }   -- 暖琥珀
+local PCAST_COLOR        = { 0.30, 0.85, 1.00, 1 }   -- 玩家施法条青色
+
+-- DoT 尺寸（响应用户 iDotSize）—— 16-48 clamp
+local function getDotSize()
+    local d = (MBT.db and MBT.db.profile and MBT.db.profile.iDotSize) or 20
+    if d < 16 then d = 16 end
+    if d > 48 then d = 48 end
+    return d
+end
+local function dotArea(d) return d * 7 + DOT_GAP * 6 end
+
+-- 标准模式 HP 宽度：默认 200 / DoT 行更宽时跟着涨（保持视觉对齐）
+local function standardContentW(d) return math.max(STANDARD_HP_WIDTH, dotArea(d)) end
+-- 标准模式 HP 高度：默认 30 / DoT 更大时 HP 跟着涨保持比例
+local function standardHpHeight(d) return math.max(STANDARD_HP_HEIGHT_MIN, d) end
+
+-- 给整个容器用的总宽度
 local function totalWidth(compact)
-    if compact then return COMPACT_HP_WIDTH + COMPACT_DOT_AREA + 4 end
-    return ICON_SIZE + FRAME_WIDTH
+    local d = getDotSize()
+    if compact then
+        return COMPACT_HP_WIDTH + dotArea(d) + 6   -- 1L + HP + 2mid + DoT + 1R
+    end
+    local rowH = BORDER_PX * 3 + standardHpHeight(d) + d
+    local portrait = rowH - BORDER_PX * 2
+    return portrait + standardContentW(d) + BORDER_PX * 3
 end
 MBT.BossFrameTotalWidth = totalWidth
-
--- 取当前 DoT 图标边长：完整模式从用户设置读，紧凑模式固定（受行高约束）
-local function getDotSize(compact)
-    if compact then return COMPACT_DOT_SIZE end
-    return (MBT.db and MBT.db.profile and MBT.db.profile.iDotSize) or DOT_SIZE
-end
 
 local SOLID = "Interface\\Buttons\\WHITE8X8"
 
@@ -59,7 +75,7 @@ local function CreateBossFrame(frameID, parent)
     local templates = "SecureActionButtonTemplate"
     if BackdropTemplateMixin then templates = templates .. ", BackdropTemplate" end
     local btn = CreateFrame("Button", "MultiBossTracker_Slot" .. frameID, parent, templates)
-    btn:SetSize(FRAME_WIDTH + ICON_SIZE, FRAME_HEIGHT)
+    btn:SetSize(260, 60)   -- 占位尺寸，ApplyCompactMode 在 STATUS 时立刻覆盖
     -- 显式列出 5 个按钮，避免某些 Classic 客户端 "AnyUp" 不包含 Button4/5 的边界情况
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
     -- 记录最近一次点击：UI_ERROR_MESSAGE 收到 facing 错误时用来定位是哪个 boss 框点的
@@ -81,10 +97,10 @@ local function CreateBossFrame(frameID, parent)
     btn:SetAttribute("*type5", "macro")
     btn.frameID = frameID
 
-    -- 半透明黑色背景。靠透明度形成"块感"，不画边框 —— 边界靠间距和黑底来定义。
+    -- 全黑不透明背景。元素内缩 1px 让 bd 黑底从边缘漏出，形成 1px"硬边框"
     local bd = btn:CreateTexture(nil, "BACKGROUND")
     bd:SetAllPoints(btn)
-    bd:SetColorTexture(0, 0, 0, 0.75)
+    bd:SetColorTexture(0, 0, 0, 1)
     btn.bd = bd
 
     -- 当前 target 高亮：4px 宽金色竖条贴在 btn 左边缘"外侧"（不和 3D 头像重叠）
@@ -100,7 +116,7 @@ local function CreateBossFrame(frameID, parent)
     -- Boss 头像区域：内含两个子组件，3D 模型 / 2D 贴图各一份，按用户设置 Show/Hide。
     -- compact 模式只 Hide 这个父 frame 即可，不用关心里面是哪种。
     local portraitFrame = CreateFrame("Frame", nil, btn)
-    portraitFrame:SetSize(ICON_SIZE, FRAME_HEIGHT)
+    portraitFrame:SetSize(54, 54)   -- 占位
     portraitFrame:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
     btn.icon = portraitFrame   -- 保留 .icon 给 compact 模式 Hide/Show 用
     btn.portraitFrame = portraitFrame
@@ -121,8 +137,8 @@ local function CreateBossFrame(frameID, parent)
     -- 注意：HP 满高度填整个帧高，施法条作为 OVERLAY 叠在底部（见下）。
     -- 这样 boss 没读条时 HP 看起来一直是完整的一条，不留空白。
     local hp = CreateFrame("StatusBar", nil, btn)
-    hp:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-    hp:SetPoint("TOPLEFT", iconFrame, "TOPRIGHT", 1, 0)
+    hp:SetSize(200, 30)   -- 占位
+    hp:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)   -- 占位锚点
     hp:SetStatusBarTexture(SOLID)
     -- WoW 经典敌方单位的血红，调暗一档（原 0.78 → 0.62），更稳重不刺眼
     hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
@@ -157,7 +173,7 @@ local function CreateBossFrame(frameID, parent)
 
     -- Cast bar — 叠在 HP 条底部 OVERLAY 层
     local cast = CreateFrame("StatusBar", nil, btn)
-    cast:SetSize(FRAME_WIDTH, CAST_HEIGHT)
+    cast:SetSize(200, 14)   -- 占位
     cast:SetPoint("BOTTOMLEFT", hp, "BOTTOMLEFT", 0, 0)
     cast:SetFrameLevel(hp:GetFrameLevel() + 2)   -- 在 HP 之上
     cast:SetStatusBarTexture(SOLID)
@@ -178,7 +194,7 @@ local function CreateBossFrame(frameID, parent)
     -- 多 boss 点击切换时一眼看出"我现在的 cast 是对着哪只"
     -- 锚点和宽度在 ApplyCompactMode 里按模式重设，这里只创建 widget
     local pcast = CreateFrame("StatusBar", nil, btn)
-    pcast:SetSize(FRAME_WIDTH + ICON_SIZE, 4)
+    pcast:SetSize(200, 4)   -- 占位
     pcast:SetFrameLevel(btn:GetFrameLevel() + 5)
     pcast:SetStatusBarTexture(SOLID)
     pcast:SetStatusBarColor(0.30, 0.85, 1.00, 1)   -- 亮青色
@@ -190,10 +206,10 @@ local function CreateBossFrame(frameID, parent)
     pcast:Hide()
     btn.playerCast = pcast
 
-    -- DoT row container (below the row, attached to right of icon)
+    -- DoT row container（占位，ApplyCompactMode 会重设位置和尺寸）
     local dotRow = CreateFrame("Frame", nil, btn)
-    dotRow:SetSize(FRAME_WIDTH, getDotSize(false))
-    dotRow:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", ICON_SIZE + 1, -2)
+    dotRow:SetSize(200, 32)
+    dotRow:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
     btn.dotRow = dotRow
     btn.dotSlots = {}      -- [sSlotName] = slotFrame
     btn.dotSlotOrder = {}  -- ordered list of active slot names for layout
@@ -201,7 +217,7 @@ local function CreateBossFrame(frameID, parent)
     -- Each DoT slot: texture + cooldown swipe + our own centered countdown text + stack count.
     local function CreateDotSlot()
         local f = CreateFrame("Frame", nil, dotRow)
-        local s = getDotSize(btn.compact)
+        local s = getDotSize()
         f:SetSize(s, s)
 
         local t = f:CreateTexture(nil, "ARTWORK")
@@ -254,70 +270,91 @@ local function CreateBossFrame(frameID, parent)
 end
 MBT.CreateBossFrame = CreateBossFrame
 
--- 在紧凑/完整模式间切换布局。每次外观切换都会调用一次。
+-- ===== 极简（单行）—— 行高随 iDotSize 缩放 =====
+local function applyCompact(btn)
+    local b = BORDER_PX
+    local d = getDotSize()
+    local rowH = d + b * 2                     -- 行高 = DoT + 上下 1px 边
+    local hpH  = d                              -- HP 同高（贴齐 DoT）
+    local da = dotArea(d)
+    local W = COMPACT_HP_WIDTH + da + b * 2 + 2
+    btn:SetSize(W, rowH)
+    btn.icon:Hide()
+    btn.cast:Hide()
+
+    btn.hp:ClearAllPoints()
+    btn.hp:SetSize(COMPACT_HP_WIDTH, hpH)
+    btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", b, -b)
+    btn.hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+
+    btn.dotRow:ClearAllPoints()
+    btn.dotRow:SetSize(da, hpH)
+    btn.dotRow:SetPoint("LEFT", btn.hp, "RIGHT", 2, 0)
+
+    btn.playerCast:ClearAllPoints()
+    btn.playerCast:SetSize(COMPACT_HP_WIDTH, 1)
+    btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
+    btn.playerCast:SetStatusBarColor(unpack(PCAST_COLOR))
+
+    btn.compact = true
+    for _, slot in pairs(btn.dotSlots) do slot:SetSize(d, d) end
+end
+
+-- ===== 标准（双行，带头像 + boss 施法条 overlay）—— 整行随 iDotSize 缩放 =====
+local function applyStandard(btn)
+    local b = BORDER_PX
+    local d = getDotSize()
+    local hpH = standardHpHeight(d)                   -- HP 高度 = max(30, DoT)
+    local rowH = b + hpH + b + d + b                  -- 1 + HP + 1 + DoT + 1
+    local portraitH = rowH - b * 2                    -- 头像贴满（1px 上下边）
+    local portraitW = portraitH                       -- 正方形
+    local portraitX = b
+    local hpX = portraitX + portraitW + b
+    local da = dotArea(d)
+    local hpW = standardContentW(d)                   -- HP 宽 = max(默认 200, DoT 行宽)
+    local W = hpX + hpW + b
+
+    btn:SetSize(W, rowH)
+
+    btn.icon:Show()
+    btn.icon:ClearAllPoints()
+    btn.icon:SetSize(portraitW, portraitH)
+    btn.icon:SetPoint("TOPLEFT", btn, "TOPLEFT", portraitX, -b)
+
+    btn.hp:ClearAllPoints()
+    btn.hp:SetSize(hpW, hpH)
+    btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", hpX, -b)
+    btn.hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+
+    btn.cast:ClearAllPoints()
+    btn.cast:SetSize(hpW, STANDARD_CAST_HEIGHT)
+    btn.cast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
+    btn.cast:SetStatusBarColor(unpack(CAST_COLOR))
+    btn.cast:Hide()   -- dispatcher 按事件 Show
+
+    btn.playerCast:ClearAllPoints()
+    btn.playerCast:SetSize(hpW, 1)
+    btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
+    btn.playerCast:SetStatusBarColor(unpack(PCAST_COLOR))
+
+    btn.dotRow:ClearAllPoints()
+    btn.dotRow:SetSize(da, d)
+    btn.dotRow:SetPoint("TOPLEFT", btn.hp, "BOTTOMLEFT", 0, -b)
+
+    btn.compact = false
+    for _, slot in pairs(btn.dotSlots) do slot:SetSize(d, d) end
+end
+
+-- 在极简/标准之间切换布局。每次切换或样式调整都会调用。
 local function ApplyCompactMode(btn, compact)
-    if compact then
-        btn:SetSize(COMPACT_HP_WIDTH + COMPACT_DOT_AREA + 4, COMPACT_HEIGHT)
-        btn.icon:Hide()
-        btn.cast:Hide()
-
-        -- HP 条改窄改高 + 占据左侧
-        btn.hp:ClearAllPoints()
-        btn.hp:SetSize(COMPACT_HP_WIDTH, COMPACT_HEIGHT)
-        btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
-
-        -- DoT 行紧贴血条右边，同高
-        btn.dotRow:ClearAllPoints()
-        btn.dotRow:SetSize(COMPACT_DOT_AREA, COMPACT_HEIGHT)
-        btn.dotRow:SetPoint("LEFT", btn.hp, "RIGHT", 4, 0)
-
-        -- 玩家施法条：紧凑模式没有"框外空间"，贴在 HP 条最底 2px（HP 内 OVERLAY）
-        btn.playerCast:ClearAllPoints()
-        btn.playerCast:SetSize(COMPACT_HP_WIDTH, 2)
-        btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
-    else
-        btn:SetSize(ICON_SIZE + FRAME_WIDTH, FRAME_HEIGHT)
-        btn.icon:Show()
-        -- 施法条始终默认隐藏 —— 只有 CastDispatcher 收到真实读条事件才会 Show 出来
-        btn.cast:Hide()
-
-        btn.hp:ClearAllPoints()
-        -- HP 填满整行高度（54），不再留 13px 空白
-        btn.hp:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-        btn.hp:SetPoint("TOPLEFT", btn.icon, "TOPRIGHT", 1, 0)
-
-        -- 施法条贴在 HP 条底部 OVERLAY 上
-        btn.cast:ClearAllPoints()
-        btn.cast:SetSize(FRAME_WIDTH, CAST_HEIGHT)
-        btn.cast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
-
-        -- DoT 行紧贴 boss 框下方（恢复原位，无空隙）
-        btn.dotRow:ClearAllPoints()
-        btn.dotRow:SetSize(FRAME_WIDTH, getDotSize(false))
-        btn.dotRow:SetPoint("TOPLEFT", btn, "BOTTOMLEFT", ICON_SIZE + 1, -2)
-
-        -- 玩家施法条：叠在 HP 条最底部，**最顶层 z-order**
-        -- - 仅 HP 区域宽（不占头像区）
-        -- - 4px 高，覆盖 boss 施法条底部 4px；boss 条上方 6px 仍可见
-        -- - 单独显示时呈现纯青色 4px 条；与 boss 条同时显示时 stack 在底（青上、黄下藏在青条下方）
-        --   但 boss 条 10 - 4 = 6px 仍然在青条上方露出来
-        btn.playerCast:ClearAllPoints()
-        btn.playerCast:SetSize(FRAME_WIDTH, 4)
-        btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
-    end
-    btn.compact = compact
-    -- 现有 DoT 槽位也得跟着重新排
-    for _, slot in pairs(btn.dotSlots) do
-        local size = getDotSize(compact)
-        slot:SetSize(size, size)
-    end
+    if compact then applyCompact(btn) else applyStandard(btn) end
     if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
 end
 MBT.ApplyCompactMode = ApplyCompactMode
 
 -- Layout DoT slots horizontally, sorted by iOrder.
 local function LayoutDotRow(btn)
-    local size = getDotSize(btn.compact)
+    local size = getDotSize()
     local order = {}
     for slot, sf in pairs(btn.dotSlots) do
         if sf:IsShown() then
@@ -360,13 +397,11 @@ function MBT:RefreshAllDotOrders()
     end
 end
 
--- 滑动条调整 DoT 图标尺寸时调用：重新设置每个 boss 的 dotRow 高度 + 所有现存槽位大小，再 relayout
+-- 滑动条调整 DoT 图标尺寸时调用：DoT 变了 → 重新跑 ApplyCompactMode 即可
+-- （像素布局所有尺寸都从 getDotSize 现算，整框会自动跟着重排）
 function MBT:UpdateDotSize()
     for _, btn in pairs(MBT.BossFrames or {}) do
-        local size = getDotSize(btn.compact)
-        if not btn.compact then
-            btn.dotRow:SetSize(FRAME_WIDTH, size)
-        end
+        local size = getDotSize()
         for _, slot in pairs(btn.dotSlots) do
             slot:SetSize(size, size)
         end

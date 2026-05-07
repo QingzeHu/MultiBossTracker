@@ -75,7 +75,7 @@ end
 MBT.defaults = {
     profile = {
         -- Layout / general
-        iSkin = 2,                       -- 1=紧凑 2=完整
+        iSkin = 2,                       -- 1=极简（单行）2=标准（双行带头像）
         iDotTextSize = 14,               -- DoT 倒计时数字字号
         iDotSize     = 32,               -- DoT 图标边长（仅完整模式；紧凑模式固定，受行高约束）
         bReverseGrowth = false,          -- frames grow downward by default
@@ -242,7 +242,7 @@ MBT.defaults = {
 
         -- Per-tier NPC blacklist (each is a flat table of "bOptionName" -> bool).
         tNPCBlackList = {
-            tTesting = {}, tT1 = {}, tT2 = {}, tT7 = {}, tT8 = {}, tT9 = {}, tT10 = {},
+            tTesting = {}, tT1 = {}, tT2 = {}, tT3 = {},
         },
 
         tDebug = {

@@ -150,16 +150,46 @@ MBT:RegisterLocale("zhCN", {
     ["Living Inferno"] = "活体地狱火",
     ["Living Ember"] = "活体余烬",
 
-    -- Naxx + OS (T7)
-    ["The Obsidian Sanctum"] = "黑曜石圣殿",
-    ["Tenebron"] = "塔纳布隆",
-    ["Shadron"] = "沙德隆",
-    ["Vesperon"] = "瓦斯佩隆",
+    -- T3 (泰坦怀旧时光 P3): 纳克萨玛斯 / 黑曜石圣殿 / 永恒之眼
+    -- Naxxramas wings (subzones)
+    ["The Arachnid Quarter"]   = "蜘蛛区",
+    ["The Plague Quarter"]     = "瘟疫区",
+    ["The Military Quarter"]   = "军事区",
+    ["The Construct Quarter"]  = "建筑区",
+    ["Frostwyrm Lair"]         = "冰霜巨龙之巢",
+    -- Spider wing
+    ["Anub'Rekhan"]            = "阿努布雷坎",
+    ["Grand Widow Faerlina"]   = "黑女巫法琳娜",
+    ["Maexxna"]                = "迈克斯纳",
+    -- Plague wing
+    ["Noth the Plaguebringer"] = "瘟疫使者诺斯",
+    ["Heigan the Unclean"]     = "肮脏的希尔盖",
+    ["Loatheb"]                = "洛欧塞布",
+    -- Military wing
+    ["Instructor Razuvious"]   = "教官拉苏维奥斯",
+    ["Gothik the Harvester"]   = "收割者戈提克",
     ["The Horsemen's Assembly"] = "天启四骑士议事厅",
-    ["Baron Rivendare"] = "瑞文戴尔男爵",
-    ["Thane Korth'azz"] = "塞恩·寇斯加",
-    ["Lady Blaumeux"] = "布劳缪克斯小姐",
-    ["Sir Zeliek"] = "泽利克爵士",
+    ["Baron Rivendare"]        = "瑞文戴尔男爵",
+    ["Thane Korth'azz"]        = "塞恩·寇斯加",
+    ["Lady Blaumeux"]          = "布劳缪克斯小姐",
+    ["Sir Zeliek"]             = "泽利克爵士",
+    -- Construct wing
+    ["Patchwerk"]              = "帕奇维克",
+    ["Grobbulus"]              = "格罗布鲁斯",
+    ["Gluth"]                  = "格拉斯",
+    ["Thaddius"]               = "塔迪乌斯",
+    -- Frostwyrm wing
+    ["Sapphiron"]              = "萨菲隆",
+    ["Kel'Thuzad"]             = "克尔苏加德",
+    -- Obsidian Sanctum
+    ["The Obsidian Sanctum"]   = "黑曜石圣殿",
+    ["Sartharion"]             = "萨塔里奥",
+    ["Tenebron"]               = "塔纳布隆",
+    ["Shadron"]                = "沙德隆",
+    ["Vesperon"]               = "瓦斯佩隆",
+    -- Eye of Eternity
+    ["The Eye of Eternity"]    = "永恒之眼",
+    ["Malygos"]                = "玛里苟斯",
 
     -- T2 (Tempest Keep + Serpentshrine Cavern)
     ["Serpentshrine Cavern"] = "毒蛇神殿",

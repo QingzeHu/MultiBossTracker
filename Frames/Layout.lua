@@ -3,17 +3,40 @@
 local addonName, MBT = ...
 
 local FRAME_IDS = {"A", "B", "C", "D", "E"}
-local FRAME_HEIGHT = 54
-local FRAME_GAP    = 40   -- 给完整模式行间留点呼吸（DoT 行 + 空气）
-local COMPACT_HEIGHT = 26
-local COMPACT_GAP    = 6   -- 紧凑模式行间留 6px，靠空隙而不是边框分隔
 
--- 紧凑模式 = iSkin == 1
+-- 初始化用：容器和首次 frame 放置时用的占位尺寸（实际尺寸由 getRowHeight/getRowGap 决定）
+local INIT_ROW_H = 54
+local INIT_ROW_GAP = 40
+
+-- 行高 / 行间距：动态随 iDotSize 缩放（像素风格唯一样式）
+-- iSkin: 1=极简（单行）/ 2=标准（双行带头像）
+local DEFAULT_FRAME_GAP   = 40
+local COMPACT_GAP         = 6      -- 极简行间距固定，省空间
+local HP_HEIGHT_MIN       = 30     -- 标准模式 HP 最小高度（DoT 更大时 HP 跟着涨）
+local BORDER              = 1      -- 1px 黑边
+
 local function isCompact() return MBT.db.profile.iSkin == 1 end
+local function getDotSize() return MBT.db.profile.iDotSize or 32 end
+
+local function getRowHeight()
+    local d = getDotSize()
+    if isCompact() then
+        -- 1px 上 + DoT + 1px 下
+        return d + BORDER * 2
+    end
+    -- 1 + HP + 1 + DoT + 1，HP 高度 = max(30, DoT)
+    local hpH = math.max(HP_HEIGHT_MIN, d)
+    return BORDER + hpH + BORDER + d + BORDER
+end
+
+local function getRowGap()
+    if isCompact() then return COMPACT_GAP end
+    return MBT.db.profile.fRowGap or DEFAULT_FRAME_GAP
+end
 
 -- Root container: invisible parent that we move/anchor + drag.
 local container = CreateFrame("Frame", "MultiBossTracker_Container", UIParent)
-container:SetSize(300, FRAME_HEIGHT * 5 + FRAME_GAP * 5)
+container:SetSize(300, INIT_ROW_H * 5 + INIT_ROW_GAP * 5)
 container:SetMovable(true)
 container:SetClampedToScreen(true)
 
@@ -90,16 +113,15 @@ for i, fid in ipairs(FRAME_IDS) do
     local btn = MBT.CreateBossFrame(fid, container)
     btn:ClearAllPoints()
     -- Default arrangement: top to bottom. bReverseGrowth flips below.
-    btn:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -((i - 1) * (FRAME_HEIGHT + FRAME_GAP)))
+    btn:SetPoint("TOPLEFT", container, "TOPLEFT", 0, -((i - 1) * (INIT_ROW_H + INIT_ROW_GAP)))
     MBT.BossFrames[fid] = btn
 end
 
 local function ReanchorRows()
     -- btn 是 SecureActionButton，战斗中无法 SetPoint —— 排队等出战
     if InCombatLockdown() then MBT:DeferIfInCombat(ReanchorRows); return end
-    local compact = isCompact()
-    local rowH = compact and COMPACT_HEIGHT or FRAME_HEIGHT
-    local rowGap = compact and COMPACT_GAP or (MBT.db.profile.fRowGap or FRAME_GAP)
+    local rowH = getRowHeight()
+    local rowGap = getRowGap()
 
     -- 收集"可见"的 boss 框体，按数据顺序
     local visibles = {}
@@ -128,18 +150,17 @@ MBT.ReanchorRows = ReanchorRows
 
 -- 把容器收缩到刚好包住所有框体（不留尾部空白）
 local function ResizeContainer()
-    local compact = isCompact()
-    local rowH = compact and COMPACT_HEIGHT or FRAME_HEIGHT
-    local rowGap = compact and COMPACT_GAP or (MBT.db.profile.fRowGap or FRAME_GAP)
+    local rowH = getRowHeight()
+    local rowGap = getRowGap()
     local n = #FRAME_IDS
     local h = n * rowH + (n - 1) * rowGap
-    -- 宽度按当前框体宽（紧凑 384 / 完整 284）
+    -- 宽度按当前框体实际宽度取最大（每种样式宽度不同）
     local w = 0
     for _, fid in ipairs(FRAME_IDS) do
         local bw = MBT.BossFrames[fid]:GetWidth()
         if bw > w then w = bw end
     end
-    if w == 0 then w = compact and 384 or 284 end
+    if w == 0 then w = 320 end
     container:SetSize(w, h)
 end
 MBT.ResizeContainer = ResizeContainer

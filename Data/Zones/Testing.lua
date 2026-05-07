@@ -48,8 +48,16 @@ tZonesData.tZones = {
                   tEnabledOptions = {"bTargetDummiesFight","bTargetDummyExpert"} },
     },
     -- Silvermoon City (银月城) — added for Blood Elves
-    -- 训练假人在杀戮街附近; 具体 NPCID 跨城共享, 用一组通用的
+    -- 训练假人在杀戮街、远行者广场都有；NPCID 跨城共享，用通用的一组
     ["杀戮街"] = {
+        ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765,
+                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyHeroic"} },
+        ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177,
+                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyGrandmaster"} },
+        ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152,
+                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyExpert"} },
+    },
+    ["远行者广场"] = {
         ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765,
                   tEnabledOptions = {"bTargetDummiesFight","bTargetDummyHeroic"} },
         ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177,
@@ -91,17 +99,6 @@ tZonesData.tZones = {
         ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152 },
     },
     ["Warrior's Terrace"] = {
-        ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765 },
-        ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
-        ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
-    },
-    -- 达拉然 (Dalaran)
-    ["克拉苏斯平台"] = {
-        ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765 },
-        ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177 },
-        ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152 },
-    },
-    ["Krasus' Landing"] = {
         ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
