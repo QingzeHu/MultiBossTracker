@@ -133,6 +133,19 @@ local function CreateBossFrame(frameID, parent)
     portrait2D:Hide()
     btn.portrait2D = portrait2D
 
+    -- 团标（团长设置的星星/圈圈/菱形等）
+    -- holder 直接挂 btn 上、frame level 抬到所有元素之上（盖在 3D 模型 / glow 之上都行）
+    -- 位置 + 尺寸由 applyStandard / applyCompact 各自重置：
+    --   标准：贴在头像左上角内部，1/4 头像大小
+    --   紧凑：贴在 btn 左外侧、当前 target 黄竖线的左边
+    local markerHolder = CreateFrame("Frame", nil, btn)
+    markerHolder:SetFrameLevel(btn:GetFrameLevel() + 10)
+    local markerIcon = markerHolder:CreateTexture(nil, "OVERLAY")
+    markerIcon:SetAllPoints(markerHolder)
+    markerIcon:Hide()
+    btn.markerHolder = markerHolder
+    btn.markerIcon = markerIcon
+
     -- HP bar (右于图标，整行高度)
     -- 注意：HP 满高度填整个帧高，施法条作为 OVERLAY 叠在底部（见下）。
     -- 这样 boss 没读条时 HP 看起来一直是完整的一条，不留空白。
@@ -296,6 +309,15 @@ local function applyCompact(btn)
     btn.playerCast:SetPoint("BOTTOMLEFT", btn.hp, "BOTTOMLEFT", 0, 0)
     btn.playerCast:SetStatusBarColor(unpack(PCAST_COLOR))
 
+    -- 团标：紧凑模式没头像，挂在 btn 左外侧 accent（黄竖线）的左边
+    -- accent 占 btn 外 -5..-1（4px 宽 + 1px 缝隙），团标右边贴到 -6 留 1px 间距
+    if btn.markerHolder then
+        local m = hpH
+        btn.markerHolder:ClearAllPoints()
+        btn.markerHolder:SetSize(m, m)
+        btn.markerHolder:SetPoint("RIGHT", btn, "LEFT", -6, 0)
+    end
+
     btn.compact = true
     for _, slot in pairs(btn.dotSlots) do slot:SetSize(d, d) end
 end
@@ -320,6 +342,15 @@ local function applyStandard(btn)
     btn.icon:ClearAllPoints()
     btn.icon:SetSize(portraitW, portraitH)
     btn.icon:SetPoint("TOPLEFT", btn, "TOPLEFT", portraitX, -b)
+
+    -- 团标：贴在头像左上角，1/4 头像大小，1px 内缩
+    if btn.markerHolder then
+        local m = math.floor(portraitW * 0.25)
+        if m < 8 then m = 8 end
+        btn.markerHolder:ClearAllPoints()
+        btn.markerHolder:SetSize(m, m)
+        btn.markerHolder:SetPoint("TOPLEFT", btn, "TOPLEFT", portraitX + 1, -(b + 1))
+    end
 
     btn.hp:ClearAllPoints()
     btn.hp:SetSize(hpW, hpH)
@@ -648,6 +679,7 @@ local function ApplyZoneSlot(btn, slotData)
     -- 清掉之前的 boss 头像；HealthUpdater 找到 unit token 后会喂新数据
     if btn.modelFrame then btn.modelFrame:ClearModel() end
     if btn.portrait2D then btn.portrait2D:SetTexture("") end
+    if btn.markerIcon then btn.markerIcon:Hide() end
     btn.lastModelGUID = nil
     btn.lastPortraitGUID = nil
     -- 切换 boss 时清掉旧高亮，下次 UpdateTargetHighlight 会重新判断
@@ -694,6 +726,21 @@ local function UpdateHealthFromUnit(btn, unit)
         if btn.portrait2D and btn.lastPortraitGUID ~= guid then
             SetPortraitTexture(btn.portrait2D, unit)
             btn.lastPortraitGUID = guid
+        end
+    end
+
+    -- 团标：每次 health 更新时同步一次 boss 当前的团标（星/圈/菱形/...）
+    -- 没标记或非 1-8 → 隐藏。SetRaidTargetIconTexture 是引擎自带工具函数。
+    -- 开关由 bShowRaidMarker 控制（默认开启）
+    if btn.markerIcon then
+        local enabled = MBT.db and MBT.db.profile and MBT.db.profile.bShowRaidMarker
+        if enabled == nil then enabled = true end
+        local idx = enabled and GetRaidTargetIndex(unit) or nil
+        if idx and idx >= 1 and idx <= 8 then
+            SetRaidTargetIconTexture(btn.markerIcon, idx)
+            btn.markerIcon:Show()
+        else
+            btn.markerIcon:Hide()
         end
     end
 end

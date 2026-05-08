@@ -639,6 +639,21 @@ local function BuildOptionsTable()
                         get = function() return MBT.db.profile.bShowFacingWarning end,
                         set = function(_, v) MBT.db.profile.bShowFacingWarning = v end,
                     },
+                    bShowRaidMarker = {
+                        order = 25.5, type = "toggle", name = "显示团标",
+                        desc = "boss 被团长打了星星 / 圈圈 / 菱形等标记时显示。\n标准模式：头像左上角，1/4 头像大小。\n紧凑模式：boss 框左外侧、当前 target 黄竖线的左边。",
+                        width = "full",
+                        get = function() return MBT.db.profile.bShowRaidMarker end,
+                        set = function(_, v)
+                            MBT.db.profile.bShowRaidMarker = v
+                            -- 关闭时立刻隐藏所有现存团标；开启则等下次 health 更新自动同步
+                            if not v then
+                                for _, btn in pairs(MBT.BossFrames or {}) do
+                                    if btn.markerIcon then btn.markerIcon:Hide() end
+                                end
+                            end
+                        end,
+                    },
                     fHealthUpdateInterval = {
                         order = 26, type = "range", name = "血量刷新间隔（秒）",
                         desc = "数值越小越实时，但开销越高。\n默认 0.1 秒 —— DPS 输出时血量是关键判断依据（处决线、阶段切换），建议保持低值。\n0 = 完全关闭血量更新",

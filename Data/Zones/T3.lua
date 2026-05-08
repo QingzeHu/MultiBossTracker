@@ -37,9 +37,12 @@ tZonesData.tZones = {
         ["C"] = { sNPCID = "15932", sTarName = "Gluth",      iIcon = 132202 },
         ["D"] = { sNPCID = "15928", sTarName = "Thaddius",   iIcon = 136015 },
     },
-    ["Frostwyrm Lair"] = {
-        ["A"] = { sNPCID = "15989", sTarName = "Sapphiron",   iIcon = 135862 },
-        ["B"] = { sNPCID = "15990", sTarName = "Kel'Thuzad",  iIcon = 136186 },
+    -- Frostwyrm 翼有独立的 boss 房 subzone（萨菲隆之巢 / 克尔苏加德之巢），分开建表
+    ["Sapphiron's Lair"] = {
+        ["A"] = { sNPCID = "15989", sTarName = "Sapphiron",  iIcon = 135862 },
+    },
+    ["Kel'Thuzad's Lair"] = {
+        ["A"] = { sNPCID = "15990", sTarName = "Kel'Thuzad", iIcon = 136186 },
     },
 
     -- 黑曜石圣殿 ----------------------------------------------------------

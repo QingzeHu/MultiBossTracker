@@ -63,7 +63,15 @@ end
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+frame:RegisterEvent("RAID_TARGET_UPDATE")
 frame:SetScript("OnEvent", function(_, event)
+    if event == "RAID_TARGET_UPDATE" then
+        -- 团长改了团标 → 立刻跑一次扫描刷新所有 boss 框（绕过 fHealthUpdateInterval 节流）
+        if not bActive then return end
+        UpdateHealthBars()
+        fNextUpdate = GetTime() + (MBT.db.profile.fHealthUpdateInterval or 1)
+        return
+    end
     if event ~= "COMBAT_LOG_EVENT_UNFILTERED" then return end
     if not bActive then return end
     local fTime = GetTime()

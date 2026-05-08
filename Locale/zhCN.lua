@@ -155,8 +155,9 @@ MBT:RegisterLocale("zhCN", {
     ["The Arachnid Quarter"]   = "蜘蛛区",
     ["The Plague Quarter"]     = "瘟疫区",
     ["The Military Quarter"]   = "军事区",
-    ["The Construct Quarter"]  = "建筑区",
-    ["Frostwyrm Lair"]         = "冰霜巨龙之巢",
+    ["The Construct Quarter"]  = "构造区",
+    ["Sapphiron's Lair"]       = "萨菲隆之巢",
+    ["Kel'Thuzad's Lair"]      = "克尔苏加德的大厅",
     -- Spider wing
     ["Anub'Rekhan"]            = "阿努布雷坎",
     ["Grand Widow Faerlina"]   = "黑女巫法琳娜",
