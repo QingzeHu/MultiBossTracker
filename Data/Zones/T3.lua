@@ -10,19 +10,28 @@ tZonesData.tZones = {
     -- 每翼一个 zone（subzone 走翼级名）；翼内 boss 全部作为候选框。
     -- 如果某个 boss 房有更精确的 subzone（如已知的天启四骑士议事厅），
     -- 单独再开一个 zone entry 即可。
+    -- 每翼的 boss 房没有独立 subzone（除天启议事厅 / Frostwyrm 之外），
+    -- 用毒蛇神殿那套：Encounters 链路 + 不写 iStartingFight
+    -- → 进翼时框体不出，鼠标悬浮哪只 boss 才出哪只；ENCOUNTER_END 走 iNextEncounter 自动推进
     ["The Arachnid Quarter"] = {
-        ["A"] = { sNPCID = "15956", sTarName = "Anub'Rekhan",          iIcon = 134337 },
-        ["B"] = { sNPCID = "15953", sTarName = "Grand Widow Faerlina", iIcon = 136033 },
-        ["C"] = { sNPCID = "15952", sTarName = "Maexxna",              iIcon = 136116 },
+        ["Encounters"] = {
+            [1107] = { ["A"] = { sNPCID = "15956", sTarName = "Anub'Rekhan",          iIcon = 134337 }, iNextEncounter = 1110 },
+            [1110] = { ["A"] = { sNPCID = "15953", sTarName = "Grand Widow Faerlina", iIcon = 136033 }, iNextEncounter = 1116 },
+            [1116] = { ["A"] = { sNPCID = "15952", sTarName = "Maexxna",              iIcon = 136116 } },
+        },
     },
     ["The Plague Quarter"] = {
-        ["A"] = { sNPCID = "15954", sTarName = "Noth the Plaguebringer", iIcon = 136181 },
-        ["B"] = { sNPCID = "15936", sTarName = "Heigan the Unclean",     iIcon = 136127 },
-        ["C"] = { sNPCID = "16011", sTarName = "Loatheb",                iIcon = 136045 },
+        ["Encounters"] = {
+            [1117] = { ["A"] = { sNPCID = "15954", sTarName = "Noth the Plaguebringer", iIcon = 136181 }, iNextEncounter = 1112 },
+            [1112] = { ["A"] = { sNPCID = "15936", sTarName = "Heigan the Unclean",     iIcon = 136127 }, iNextEncounter = 1115 },
+            [1115] = { ["A"] = { sNPCID = "16011", sTarName = "Loatheb",                iIcon = 136045 } },
+        },
     },
     ["The Military Quarter"] = {
-        ["A"] = { sNPCID = "16061", sTarName = "Instructor Razuvious", iIcon = 132326 },
-        ["B"] = { sNPCID = "16060", sTarName = "Gothik the Harvester", iIcon = 136093 },
+        ["Encounters"] = {
+            [1113] = { ["A"] = { sNPCID = "16061", sTarName = "Instructor Razuvious", iIcon = 132326 }, iNextEncounter = 1109 },
+            [1109] = { ["A"] = { sNPCID = "16060", sTarName = "Gothik the Harvester", iIcon = 136093 } },
+        },
     },
     -- 4HM 在军事区里有自己的精确 subzone（议事厅）—— 单独保留
     ["The Horsemen's Assembly"] = {
@@ -32,10 +41,12 @@ tZonesData.tZones = {
         ["D"] = { sNPCID = "16063", sTarName = "Sir Zeliek",      iIcon = 135972, tEnabledOptions = {"b4HMFight","bZeliek"} },
     },
     ["The Construct Quarter"] = {
-        ["A"] = { sNPCID = "16028", sTarName = "Patchwerk",  iIcon = 132092 },
-        ["B"] = { sNPCID = "15931", sTarName = "Grobbulus",  iIcon = 132307 },
-        ["C"] = { sNPCID = "15932", sTarName = "Gluth",      iIcon = 132202 },
-        ["D"] = { sNPCID = "15928", sTarName = "Thaddius",   iIcon = 136015 },
+        ["Encounters"] = {
+            [1118] = { ["A"] = { sNPCID = "16028", sTarName = "Patchwerk", iIcon = 132092 }, iNextEncounter = 1111 },
+            [1111] = { ["A"] = { sNPCID = "15931", sTarName = "Grobbulus", iIcon = 132307 }, iNextEncounter = 1108 },
+            [1108] = { ["A"] = { sNPCID = "15932", sTarName = "Gluth",     iIcon = 132202 }, iNextEncounter = 1120 },
+            [1120] = { ["A"] = { sNPCID = "15928", sTarName = "Thaddius",  iIcon = 136015 } },
+        },
     },
     -- Frostwyrm 翼有独立的 boss 房 subzone（萨菲隆之巢 / 克尔苏加德之巢），分开建表
     ["Sapphiron's Lair"] = {
