@@ -4,7 +4,6 @@ local addonName, MBT = ...
 MBT:RegisterLocale("zhCN", {
     -- Testing
     ["The Great Forge"] = "大锻炉",
-    ["War Quarter"] = "军事区",
     ["Valley of Honor"] = "荣誉谷",
     ["Heroic Training Dummy"] = "英雄训练假人",
     ["Grandmaster's Training Dummy"] = "宗师的训练假人",
@@ -191,6 +190,29 @@ MBT:RegisterLocale("zhCN", {
     -- Eye of Eternity
     ["The Eye of Eternity"]    = "永恒之眼",
     ["Malygos"]                = "玛里苟斯",
+
+    -- T4 P4 新增：祖尔格拉布 (Vanilla 20 人团本) — 译名按国服怀旧服官方
+    ["Zul'Gurub"] = "祖尔格拉布",
+    ["High Priestess Jeklik"]    = "高阶祭司耶克里克",
+    ["High Priest Venoxis"]      = "高阶祭司温诺希斯",
+    ["High Priestess Mar'li"]    = "高阶祭司玛尔里",
+    ["Bloodlord Mandokir"]       = "血领主曼多基尔",
+    ["Ohgan"]                    = "奥甘",
+    ["Gri'lek"]                  = "格里雷克",
+    ["Hazza'rah"]                = "哈扎拉尔",
+    ["Renataki"]                 = "雷纳塔基",
+    ["Wushoolay"]                = "乌苏雷",
+    ["High Priest Thekal"]       = "高阶祭司塞卡尔",
+    ["Zealot Lor'Khan"]          = "狂热者罗尔卡恩",
+    ["Zealot Zath"]              = "狂热者扎斯",
+    ["Gahz'ranka"]               = "加兹兰卡",
+    ["High Priestess Arlokk"]    = "高阶祭司娅尔罗",
+    ["Jin'do the Hexxer"]        = "妖术师金度",
+    ["Shade of Jin'do"]          = "金度的影像",
+    ["Hakkar"]                   = "哈卡",
+    ["Son of Hakkar"]            = "哈卡之子",
+    ["Bloodseeker Bat"]          = "嗜血蝙蝠",
+    ["Frenzied Bloodseeker Bat"] = "狂乱的嗜血蝙蝠",
 
     -- T2 (Tempest Keep + Serpentshrine Cavern)
     ["Serpentshrine Cavern"] = "毒蛇神殿",

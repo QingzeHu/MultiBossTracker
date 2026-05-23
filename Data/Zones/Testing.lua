@@ -13,16 +13,6 @@ tZonesData.tZones = {
         ["A"] = { sNPCID = "25611", sTarName = "Heroic Training Dummy", iIcon = 132765 },
         ["B"] = { sNPCID = "25600", sTarName = "Heroic Training Dummy", iIcon = 132765 },
     },
-    ["War Quarter"] = {
-        ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765,
-                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyHeroic"} },
-        ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177,
-                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyGrandmaster"} },
-        ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152,
-                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyExpert"} },
-        ["D"] = { sNPCID = "32667", sTarName = "Master's Training Dummy",     iIcon = 132996,
-                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyMaster"} },
-    },
     ["Valley of Honor"] = {
         ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765,
                   tEnabledOptions = {"bTargetDummiesFight","bTargetDummyHeroic"} },

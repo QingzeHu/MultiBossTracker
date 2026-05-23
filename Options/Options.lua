@@ -199,6 +199,94 @@ local PHASES = {
             },
         },
     },
+
+    {
+        key = "P4", label = "P4 — 十字军的试炼 / 祖尔格拉布",
+        sections = {
+            {
+                header = "十字军的试炼 - 诺森德猛兽",
+                bosses = {
+                    { name = "穿刺者戈莫克",   npcID = "34796",
+                      adds = { { name = "狗头人奴隶", npcID = "34800" } } },
+                    { name = "酸喉",           npcID = "35144" },
+                    { name = "恐鳞",           npcID = "34799" },
+                    { name = "冰吼",           npcID = "34797" },
+                },
+            },
+            {
+                header = "十字军的试炼 - 加拉克苏斯大王",
+                bosses = {
+                    { name = "加拉克苏斯大王", npcID = "34780",
+                      adds = {
+                          { name = "虚空传送门", npcID = "34825" },
+                          { name = "地狱火山",   npcID = "34813" },
+                          { name = "痛苦女王",   npcID = "34826" },
+                      } },
+                },
+            },
+            {
+                header = "十字军的试炼 - 阵营冠军",
+                bosses = {
+                    { name = "增强萨满",   npcIDs = { "34463", "34455" } },
+                    { name = "戒律牧师",   npcIDs = { "34466", "34447" } },
+                    { name = "恢复德鲁伊", npcIDs = { "34469", "34459" } },
+                    { name = "恢复萨满",   npcIDs = { "34470", "34444" } },
+                    { name = "盗贼",       npcIDs = { "34472", "34454" } },
+                    { name = "战士",       npcIDs = { "34475", "34453" } },
+                    { name = "猎人",       npcIDs = { "34467", "34448" } },
+                    { name = "死亡骑士",   npcIDs = { "34461", "34458" } },
+                    { name = "术士",       npcIDs = { "34474", "34450" } },
+                    { name = "惩戒骑士",   npcIDs = { "34471", "34456" } },
+                    { name = "神圣骑士",   npcIDs = { "34465", "34445" } },
+                    { name = "平衡德",     npcIDs = { "34460", "34451" } },
+                    { name = "暗影牧师",   npcIDs = { "34473", "34441" } },
+                    { name = "法师",       npcIDs = { "34468", "34449" } },
+                },
+            },
+            {
+                header = "十字军的试炼 - 瓦格里双子",
+                bosses = {
+                    { name = "光明邪使菲奥拉", npcID = "34497" },
+                    { name = "黑暗邪使艾蒂丝", npcID = "34496" },
+                },
+            },
+            {
+                header = "十字军的试炼 - 寒冰深渊",
+                bosses = {
+                    { name = "阿努巴拉克",     npcID = "34564",
+                      adds = { { name = "蛛魔掘地者", npcID = "34607" } } },
+                },
+            },
+            {
+                header = "祖尔格拉布",
+                bosses = {
+                    { name = "高阶祭司耶克里克", npcID = "14517",
+                      adds = {
+                          { name = "嗜血蝙蝠",         npcID = "11368" },
+                          { name = "狂乱的嗜血蝙蝠",   npcID = "14965" },
+                      } },
+                    { name = "高阶祭司温诺希斯", npcID = "14507" },
+                    { name = "高阶祭司玛尔里",   npcID = "14510" },
+                    { name = "血领主曼多基尔",   npcID = "11382",
+                      adds = { { name = "奥甘", npcID = "14988" } } },
+                    -- 疯狂之缘一勾控制 4 个备选巨魔（每周服务器 RNG 出 1 个）
+                    { name = "疯狂之缘 (4 选 1: 格里雷克/哈扎拉尔/雷纳塔基/乌苏雷)",
+                      npcIDs = { "15082", "15083", "15084", "15085" } },
+                    { name = "高阶祭司塞卡尔",   npcID = "14509",
+                      adds = {
+                          { name = "狂热者罗尔卡恩", npcID = "11347" },
+                          { name = "狂热者扎斯",     npcID = "11348" },
+                      } },
+                    { name = "加兹兰卡",         npcID = "15114" },
+                    { name = "高阶祭司娅尔罗",   npcID = "14515" },
+                    { name = "妖术师金度",       npcID = "11380",
+                      adds = { { name = "金度的影像", npcID = "14986" } } },
+                    { name = "哈卡",             npcID = "14834",
+                      adds = { { name = "哈卡之子", npcID = "11357" } } },
+                },
+            },
+        },
+    },
 }
 
 -- 一个 boss/小怪条目的 hidden 状态：单个 NPCID 直接查；多 NPCID 全部隐藏才算 true
@@ -701,7 +789,7 @@ local function BuildOptionsTable()
                         order = 51, type = "execute",
                         -- 用 InteractiveLabel 让这条渲染成可点击的文本，而不是按钮
                         dialogControl = "InteractiveLabel",
-                        name = "多目标 Boss 追踪交流群\n群号：|cFFFFD200124134274|r\n密码：|cFFFFD200多目标|r\n|cFF888888（点击复制群号到聊天框）|r",
+                        name = "多目标 Boss 追踪交流群\nQQ群号：|cFFFFD200124134274|r\n密码：|cFFFFD200多目标|r\n|cFF888888（点击复制群号到聊天框）|r",
                         width = "full",
                         desc = "点击后把 QQ 群号自动填进游戏聊天输入框，按 Ctrl+C 即可复制到系统剪贴板。\n注意：不要按 Enter，否则会把群号发送到当前频道。",
                         func = function()

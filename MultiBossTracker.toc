@@ -4,7 +4,7 @@
 ## Notes: Multi-target boss frames with click-cast — track HP / DoTs / casts across up to 5 bosses
 ## Notes-zhCN: 多目标 Boss 追踪 — 一屏显示最多 5 个 boss 的血条、DoT、施法条，支持点击施法
 ## Author: Qingze Hu
-## Version: 1.3.2
+## Version: 1.4.0
 ## X-License: MIT
 ## X-Category: Combat
 ## SavedVariables: MultiBossTrackerDB
@@ -31,9 +31,9 @@ Data\Zones\Testing.lua
 Data\Zones\T1.lua
 Data\Zones\T2.lua
 Data\Zones\T3.lua
+Data\Zones\T4.lua
 # 下面这些副本在泰坦怀旧时光当前阶段未开放，先注释掉。开放后重新启用即可。
 # Data\Zones\T8.lua
-# Data\Zones\T9.lua
 # Data\Zones\T10.lua
 
 Dispatchers\ZoneDispatcher.lua
