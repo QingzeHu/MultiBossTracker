@@ -99,12 +99,12 @@ local function updateDeltaLabel(cr, cfg)
         cr.label:SetText(cfg.sLabel or GetSpellInfo(cfg.iSpellID) or "")
         cr.label:SetTextColor(1, 1, 1, 1)
     elseif delta > 0 then
-        -- 绿 ▲ N：proc/buff 涨了 → 该 recast 抢快照
-        cr.label:SetText("▲ " .. delta)
+        -- 绿 ▲ N DPS：proc/buff 涨了 → 该 recast 抢快照
+        cr.label:SetText("▲ " .. delta .. " DPS")
         cr.label:SetTextColor(0.20, 1.00, 0.20, 1)
     else
-        -- 红 ▼ N：cast 时的 proc/buff 没了 → 继续吸别断（用绝对值，箭头已表达方向）
-        cr.label:SetText("▼ " .. (-delta))
+        -- 红 ▼ N DPS：cast 时的 proc/buff 没了 → 继续吸别断（用绝对值，箭头已表达方向）
+        cr.label:SetText("▼ " .. (-delta) .. " DPS")
         cr.label:SetTextColor(1.00, 0.25, 0.25, 1)
     end
 end
