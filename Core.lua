@@ -87,6 +87,8 @@ MBT.defaults = {
         bShowFacingWarning = true,       -- HP 右上角 "面" 字闪烁提示朝向错误（点击施法返回 facing 错误时）
         bShowRaidMarker = true,          -- 显示团长设置的团标（标准模式：头像左上角；紧凑模式：accent 黄竖线左侧）
         bUse3DPortrait = true,           -- 头像类型：true=3D 模型，false=2D 静态贴图（更省 GPU）
+        bHideBrandPips = false,          -- true = 隐藏毁灭术士的余烬/暗影印记 pip 行，boss 框退回原始形态
+        bHideChannelBar = false,         -- true = 隐藏痛苦术士的吸取灵魂引导条，boss 框退回原始形态
         fHealthUpdateInterval = 0.1,     -- seconds between raid scans (DPS 输出时血量很关键，默认尽量实时)
         fUpdateRate = 0.1,               -- HP bar smoothing rate
         bClassicBarDynamicHeight = false,

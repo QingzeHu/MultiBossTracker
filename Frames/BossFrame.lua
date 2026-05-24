@@ -29,6 +29,26 @@ local HP_COLOR_HIGHLIGHT = { 0.95, 0.30, 0.30, 1 }   -- 当前 target 高亮（�
 local CAST_COLOR         = { 0.96, 0.78, 0.27, 1 }   -- 暖琥珀
 local PCAST_COLOR        = { 0.30, 0.85, 1.00, 1 }   -- 玩家施法条青色
 
+-- Stack pips（印记层数指示器）尺寸
+local PIP_H              = 13    -- 单格高（上段 6 + 中间 1px 黑 gap + 下段 6）
+local PIP_HALF_H         = 6     -- 每段高（top + bot 各画 6px，中间留 1px 露黑底）
+local PIP_GAP            = 2     -- 格与格水平间距
+local PIP_MIN_W          = 10    -- 单格最小宽度兜底（极窄框时）
+local PIP_TEXT_W         = 32    -- 单个数字预留宽（"6/6" 14pt OUTLINE 约 28-30px）
+local PIP_TEXT_GAP       = 4     -- 两个数字之间间距
+local PIP_TEXT_PAD       = 6     -- 第二个数字右边到首个 pip 之间的间距
+local PIP_MAX_DEFAULT    = 8     -- 预创建 pip widget 上限（覆盖常见 iMaxStacks）
+local PIP_INSET_Y        = 1     -- pip 行底部上抬量（暗影段下方留 1px 黑底当"间隔"）
+local PIP_DARK           = { 0.10, 0.10, 0.10 }   -- 未点亮段颜色
+local PIP_FONT_SIZE      = 14
+
+-- channelRow 复用 pip 行的同一块底部空间（同 spec 不会同时激活，channel 是痛苦专属、pip 是毁灭专属）
+-- 共用 PIP_H / PIP_INSET_Y / indicatorExtraH
+local CHANNEL_DMG_FONT_SIZE = 12
+local CHANNEL_BAR_BG_RGBA   = { 0.05, 0.02, 0.08, 0.75 }
+local CHANNEL_TICK_RGBA     = { 0, 0, 0, 1 }
+local CHANNEL_HAUNT_RGBA    = { 1, 0, 0, 1 }
+
 -- DoT 尺寸（响应用户 iDotSize）—— 16-48 clamp
 local function getDotSize()
     local d = (MBT.db and MBT.db.profile and MBT.db.profile.iDotSize) or 20
@@ -227,6 +247,106 @@ local function CreateBossFrame(frameID, parent)
     btn.dotSlots = {}      -- [sSlotName] = slotFrame
     btn.dotSlotOrder = {}  -- ordered list of active slot names for layout
 
+    -- 印记/层数指示器行：tStackPips 配置驱动。尺寸由 applyStandard/applyCompact 重置。
+    -- 每格 = 上下两段贴图（中间留 1px 露黑底当分隔），独立亮灭显示各自 stacks
+    -- 左侧两个数字 "X/N Y/N"（上印记色 / 下印记色）。pip 块在右侧拉伸填满 frame 宽。
+    local pipRow = CreateFrame("Frame", nil, btn)
+    pipRow:Hide()
+    btn.pipRow = pipRow
+    pipRow.pips = {}
+
+    local function makePipText(xOffset, r, g, b)
+        local t = pipRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        t:SetPoint("LEFT", pipRow, "LEFT", xOffset, 0)
+        t:SetJustifyH("LEFT")
+        t:SetFont(t:GetFont(), PIP_FONT_SIZE, "OUTLINE")
+        t:SetTextColor(r, g, b, 1)
+        return t
+    end
+    pipRow.text1 = makePipText(2, 0.98, 0.35, 0.10)                                    -- 余烬橙
+    pipRow.text2 = makePipText(2 + PIP_TEXT_W + PIP_TEXT_GAP, 0.55, 0.30, 0.95)        -- 暗影紫（提亮版；原色配 OUTLINE 在黑底上几乎看不见）
+
+    -- 创建 PIP_MAX_DEFAULT 个 pip widget；位置/宽度由 LayoutPipRow 在 layout 时计算
+    -- 上下两段纹理用 LEFT+RIGHT 锚点，宽度自动跟随父 pip frame，无需手动 SetSize
+    for i = 1, PIP_MAX_DEFAULT do
+        local p = CreateFrame("Frame", nil, pipRow)
+        p:SetHeight(PIP_H)
+        local top = p:CreateTexture(nil, "ARTWORK")
+        top:SetPoint("TOPLEFT", p, "TOPLEFT", 0, 0)
+        top:SetPoint("TOPRIGHT", p, "TOPRIGHT", 0, 0)
+        top:SetHeight(PIP_HALF_H)
+        top:SetColorTexture(PIP_DARK[1], PIP_DARK[2], PIP_DARK[3], 1)
+        p.top = top
+        local bot = p:CreateTexture(nil, "ARTWORK")
+        bot:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 0, 0)
+        bot:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", 0, 0)
+        bot:SetHeight(PIP_HALF_H)
+        bot:SetColorTexture(PIP_DARK[1], PIP_DARK[2], PIP_DARK[3], 1)
+        p.bot = bot
+        pipRow.pips[i] = p
+    end
+
+    -- 引导技能条（痛苦术专属）：跟 pipRow 占同一块底部空间，由 spec gating 互斥显示
+    -- bar 从右往左倒数（默认 SetValue 方向）；4 条固定 tick + 1 条动态 Haunt 红线 + 右端伤害数字
+    local channelRow = CreateFrame("Frame", nil, btn)
+    channelRow:Hide()
+    btn.channelRow = channelRow
+
+    -- bar：TOP/BOTTOM 永远贴 channelRow 顶底；LEFT/RIGHT 在 layout 时设（紧凑全宽 / 标准让出标签宽度）
+    local bar = CreateFrame("StatusBar", nil, channelRow)
+    bar:SetPoint("TOP", channelRow, "TOP", 0, 0)
+    bar:SetPoint("BOTTOM", channelRow, "BOTTOM", 0, 0)
+    bar:SetPoint("RIGHT", channelRow, "RIGHT", 0, 0)
+    bar:SetPoint("LEFT", channelRow, "LEFT", 0, 0)
+    bar:SetStatusBarTexture(SOLID)
+    bar:SetStatusBarColor(0.40, 0.10, 0.55, 1)   -- 占位色，UpdateChannelBar 会按配置覆盖
+    bar:SetMinMaxValues(0, 1)
+    bar:SetValue(1)
+    channelRow.bar = bar
+
+    local barBg = bar:CreateTexture(nil, "BACKGROUND")
+    barBg:SetAllPoints(bar)
+    barBg:SetColorTexture(CHANNEL_BAR_BG_RGBA[1], CHANNEL_BAR_BG_RGBA[2], CHANNEL_BAR_BG_RGBA[3], CHANNEL_BAR_BG_RGBA[4])
+
+    -- 标签（位置/宽度由 LayoutChannelRow 设）
+    -- 必须创建在 bar 上而不是 channelRow —— 因为 bar 的 statusbar 纹理会盖住 channelRow 的 OVERLAY 层，
+    -- 而 bar 自己的 OVERLAY 层永远在 bar 内容之上。dmgText/ticks 也是同样原因都建在 bar 上
+    local channelLabel = bar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    channelLabel:SetJustifyH("CENTER")
+    local lfp = channelLabel:GetFont()
+    if lfp then channelLabel:SetFont(lfp, 10, "OUTLINE") end
+    channelLabel:SetTextColor(1, 1, 1, 1)
+    channelLabel:SetText("")
+    channelRow.label = channelLabel
+
+    -- 4 条固定分隔线（按 iTickCount-1 创建，最多 8 条覆盖常见情况）
+    -- 宽度 2px：1px 纹理在 UI 缩放下会落到亚像素位置被抗锯齿成"忽粗忽细"，2px 在任何缩放下都稳定可见
+    channelRow.ticks = {}
+    for i = 1, 8 do
+        local t = bar:CreateTexture(nil, "OVERLAY")
+        t:SetSize(2, PIP_H)
+        t:SetColorTexture(CHANNEL_TICK_RGBA[1], CHANNEL_TICK_RGBA[2], CHANNEL_TICK_RGBA[3], CHANNEL_TICK_RGBA[4])
+        t:Hide()
+        channelRow.ticks[i] = t
+    end
+
+    -- Haunt 续断标记（红色，2px 宽）
+    local hauntTick = bar:CreateTexture(nil, "OVERLAY")
+    hauntTick:SetSize(2, PIP_H)
+    hauntTick:SetColorTexture(CHANNEL_HAUNT_RGBA[1], CHANNEL_HAUNT_RGBA[2], CHANNEL_HAUNT_RGBA[3], CHANNEL_HAUNT_RGBA[4])
+    hauntTick:Hide()
+    channelRow.hauntTick = hauntTick
+
+    -- 伤害数字（右端内侧，OUTLINE 抗黑底）
+    local dmgText = bar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    dmgText:SetPoint("RIGHT", bar, "RIGHT", -3, 0)
+    dmgText:SetJustifyH("RIGHT")
+    local dfp = dmgText:GetFont()
+    if dfp then dmgText:SetFont(dfp, CHANNEL_DMG_FONT_SIZE, "OUTLINE") end
+    dmgText:SetTextColor(1, 1, 0.6, 1)
+    dmgText:SetText("")
+    channelRow.dmgText = dmgText
+
     -- Each DoT slot: texture + cooldown swipe + our own centered countdown text + stack count.
     local function CreateDotSlot()
         local f = CreateFrame("Frame", nil, dotRow)
@@ -283,11 +403,133 @@ local function CreateBossFrame(frameID, parent)
 end
 MBT.CreateBossFrame = CreateBossFrame
 
+-- 当前激活的职业 tStackPips 配置（无 = 不画 pip 行）。仅在 layout 计算时读，无副作用。
+-- 配置可选 fnEnabled() —— 返回 false（含 nil）时视为不激活（用于天赋/spec 门控）
+local function getPipConfig()
+    local cd = MBT.formattedClassData
+    local cfg = cd and cd.tStackPips
+    if not cfg then return nil end
+    if cfg.fnEnabled and not cfg.fnEnabled() then return nil end
+    return cfg
+end
+-- 同上，channel bar 配置（痛苦术专属）
+local function getChannelConfig()
+    local cd = MBT.formattedClassData
+    local cfg = cd and cd.tChannelBar
+    if not cfg then return nil end
+    if cfg.fnEnabled and not cfg.fnEnabled() then return nil end
+    return cfg
+end
+MBT.GetChannelConfig = getChannelConfig
+-- 底部指示器额外占用的垂直空间。pip 行 / channel 行复用同一块空间（不同 spec 互斥），
+-- 任一激活就加高
+local function pipExtraH()
+    if getPipConfig() or getChannelConfig() then return PIP_H + PIP_INSET_Y end
+    return 0
+end
+
+-- 布局 channelRow：
+--   labelW > 0：左 labelW 给标签（标准模式 = 头像列下方），右边给 bar
+--   labelW = 0：bar 全宽（紧凑模式），label 盖在 bar 内部左端，伤害数字仍在右端
+-- 同时画 N-1 条固定 tick 分隔线（在 bar 上、按宽度比例）
+local function LayoutChannelRow(btn, cfg, labelW)
+    local cr = btn and btn.channelRow
+    if not cr or not cfg then return end
+
+    -- bar 锚点：LEFT 让出 labelW，RIGHT 贴 channelRow 右边
+    cr.bar:ClearAllPoints()
+    cr.bar:SetPoint("LEFT", cr, "LEFT", labelW or 0, 0)
+    cr.bar:SetPoint("RIGHT", cr, "RIGHT", 0, 0)
+    cr.bar:SetPoint("TOP", cr, "TOP", 0, 0)
+    cr.bar:SetPoint("BOTTOM", cr, "BOTTOM", 0, 0)
+
+    -- 标签：两种模式都显示，但位置不同（切换时要重新锚点）
+    cr.label:ClearAllPoints()
+    if labelW and labelW > 0 then
+        -- 标准模式：占 portrait 列下方，居中
+        cr.label:SetPoint("LEFT", cr, "LEFT", 0, 0)
+        cr.label:SetPoint("TOP", cr, "TOP", 0, 0)
+        cr.label:SetPoint("BOTTOM", cr, "BOTTOM", 0, 0)
+        cr.label:SetWidth(labelW)
+        cr.label:SetJustifyH("CENTER")
+    else
+        -- 紧凑模式：盖在 bar 内部左端，左对齐；宽度 80 给右端伤害数字留位
+        cr.label:SetPoint("LEFT", cr.bar, "LEFT", 4, 0)
+        cr.label:SetPoint("TOP", cr.bar, "TOP", 0, 0)
+        cr.label:SetPoint("BOTTOM", cr.bar, "BOTTOM", 0, 0)
+        cr.label:SetWidth(80)
+        cr.label:SetJustifyH("LEFT")
+    end
+    cr.label:SetText(cfg.sLabel or GetSpellInfo(cfg.iSpellID) or "")
+    cr.label:Show()
+
+    -- 配置色刷新（StatusBar 主色 + 伤害数字色）
+    local c = cfg.tBarColor
+    if c then cr.bar:SetStatusBarColor(c[1], c[2], c[3], c[4] or 1) end
+    local dc = cfg.tDamageColor
+    if dc then cr.dmgText:SetTextColor(dc[1], dc[2], dc[3], dc[4] or 1) end
+
+    -- N-1 条分隔线（按 bar 实际宽度等分）
+    local barW = cr.bar:GetWidth()
+    local n = cfg.iTickCount or 5
+    for i = 1, #cr.ticks do
+        local t = cr.ticks[i]
+        if i < n then
+            t:ClearAllPoints()
+            t:SetPoint("LEFT", cr.bar, "LEFT", math.floor(barW * i / n), 0)
+            t:Show()
+        else
+            t:Hide()
+        end
+    end
+end
+
+-- 给定 pipRow（已 SetSize），把 N 个 pip widget 等宽拉伸排满右侧剩余空间
+-- 纹理宽度通过 LEFT+RIGHT 锚点自动跟随 pip frame，这里只管 pip 自己的宽度和锚点
+-- labelW：左侧文字区宽度（含两个数字 + 中间 gap + 右 padding）。pip 块从 labelW 开始
+--   • 标准模式调用方传 b + portraitW，让 pip 块跟 HP 条左边像素对齐、文字区跟头像同宽
+--   • 紧凑模式或没传值时回退到默认（两个 26px 文字 + gap + pad = 64px）
+local PIP_FIRST_X_DEFAULT = 2 + PIP_TEXT_W + PIP_TEXT_GAP + PIP_TEXT_W + PIP_TEXT_PAD
+local function LayoutPipRow(btn, n, labelW)
+    labelW = labelW or PIP_FIRST_X_DEFAULT
+
+    -- 把 labelW 平分给两个文字（减左 pad 和中间 gap）
+    local textPadL = 2
+    local eachTextW = math.max(8, math.floor((labelW - textPadL - PIP_TEXT_GAP) / 2))
+
+    btn.pipRow.text1:ClearAllPoints()
+    btn.pipRow.text1:SetPoint("LEFT", btn.pipRow, "LEFT", textPadL, 0)
+    btn.pipRow.text1:SetWidth(eachTextW)
+    btn.pipRow.text1:SetJustifyH("CENTER")
+
+    btn.pipRow.text2:ClearAllPoints()
+    btn.pipRow.text2:SetPoint("LEFT", btn.pipRow, "LEFT", textPadL + eachTextW + PIP_TEXT_GAP, 0)
+    btn.pipRow.text2:SetWidth(eachTextW)
+    btn.pipRow.text2:SetJustifyH("CENTER")
+
+    -- pip 块从 labelW 开始
+    local rowW = btn.pipRow:GetWidth()
+    local pipW = math.floor((rowW - labelW - (n - 1) * PIP_GAP) / n)
+    if pipW < PIP_MIN_W then pipW = PIP_MIN_W end
+    for i = 1, PIP_MAX_DEFAULT do
+        local p = btn.pipRow.pips[i]
+        if i <= n then
+            p:ClearAllPoints()
+            p:SetWidth(pipW)
+            p:SetPoint("LEFT", btn.pipRow, "LEFT", labelW + (i-1) * (pipW + PIP_GAP), 0)
+            p:Show()
+        else
+            p:Hide()
+        end
+    end
+end
+
 -- ===== 极简（单行）—— 行高随 iDotSize 缩放 =====
 local function applyCompact(btn)
     local b = BORDER_PX
     local d = getDotSize()
-    local rowH = d + b * 2                     -- 行高 = DoT + 上下 1px 边
+    local pipH = pipExtraH()                   -- 0（无配置）/ PIP_H + PIP_INSET_Y
+    local rowH = d + b * 2 + pipH               -- 行高 = DoT + 上下 1px 边 (+ pip 行)
     local hpH  = d                              -- HP 同高（贴齐 DoT）
     local da = dotArea(d)
     local W = COMPACT_HP_WIDTH + da + b * 2 + 2
@@ -318,6 +560,37 @@ local function applyCompact(btn)
         btn.markerHolder:SetPoint("RIGHT", btn, "LEFT", -6, 0)
     end
 
+    -- pip 行 —— 在底部、HP 下方
+    if btn.pipRow then
+        local pipCfg = getPipConfig()
+        if pipCfg then
+            btn.pipRow:ClearAllPoints()
+            btn.pipRow:SetSize(W - b * 2, PIP_H)
+            btn.pipRow:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", b, PIP_INSET_Y)
+            btn.pipRow:Show()
+            -- 紧凑模式：文字区 = HP 宽 + 2px gap，让 pip 块从 DoT 区起始位置开始
+            LayoutPipRow(btn, pipCfg.iMaxStacks, COMPACT_HP_WIDTH + 2)
+            if MBT.UpdatePipsForBoss then MBT.UpdatePipsForBoss(btn) end
+        else
+            btn.pipRow:Hide()
+        end
+    end
+    -- channel 行：跟 pip 行占同一位置，互斥（不同 spec）
+    -- 紧凑模式：bar 全宽，无标签
+    if btn.channelRow then
+        local chCfg = getChannelConfig()
+        if chCfg then
+            btn.channelRow:ClearAllPoints()
+            btn.channelRow:SetSize(W - b * 2, PIP_H)
+            btn.channelRow:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", b, PIP_INSET_Y)
+            LayoutChannelRow(btn, chCfg, 0)
+        else
+            btn.channelRow:Hide()
+            btn.channelRow.startTime = nil
+            btn.channelRow.endTime = nil
+        end
+    end
+
     btn.compact = true
     for _, slot in pairs(btn.dotSlots) do slot:SetSize(d, d) end
 end
@@ -326,9 +599,10 @@ end
 local function applyStandard(btn)
     local b = BORDER_PX
     local d = getDotSize()
+    local pipH = pipExtraH()                          -- 0（无配置）/ PIP_H + PIP_INSET_Y
     local hpH = standardHpHeight(d)                   -- HP 高度 = max(30, DoT)
-    local rowH = b + hpH + b + d + b                  -- 1 + HP + 1 + DoT + 1
-    local portraitH = rowH - b * 2                    -- 头像贴满（1px 上下边）
+    local rowH = b + hpH + b + d + b + pipH           -- 1 + HP + 1 + DoT + 1 (+ pip + 1)
+    local portraitH = b + hpH + d                     -- 头像盖 HP+DoT 区域（= rowH - 2b - pipH，pip 在头像下方占整行宽）
     local portraitW = portraitH                       -- 正方形
     local portraitX = b
     local hpX = portraitX + portraitW + b
@@ -371,6 +645,38 @@ local function applyStandard(btn)
     btn.dotRow:ClearAllPoints()
     btn.dotRow:SetSize(da, d)
     btn.dotRow:SetPoint("TOPLEFT", btn.hp, "BOTTOMLEFT", 0, -b)
+
+    -- pip 行 —— 在底部内侧、DoT 下方
+    if btn.pipRow then
+        local pipCfg = getPipConfig()
+        if pipCfg then
+            btn.pipRow:ClearAllPoints()
+            btn.pipRow:SetSize(W - b * 2, PIP_H)
+            btn.pipRow:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", b, PIP_INSET_Y)
+            btn.pipRow:Show()
+            -- 标准模式：文字区宽度 = 头像列宽，让右侧 pip 块跟 HP 条左边对齐
+            LayoutPipRow(btn, pipCfg.iMaxStacks, b + portraitW)
+            if MBT.UpdatePipsForBoss then MBT.UpdatePipsForBoss(btn) end
+        else
+            btn.pipRow:Hide()
+        end
+    end
+    -- channel 行：跟 pip 行占同一位置，互斥（不同 spec）
+    -- 标准模式：labelW = b + portraitW，让 bar 的左边跟 HP 条左边对齐，标签区在头像下方
+    if btn.channelRow then
+        local chCfg = getChannelConfig()
+        if chCfg then
+            btn.channelRow:ClearAllPoints()
+            btn.channelRow:SetSize(W - b * 2, PIP_H)
+            btn.channelRow:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", b, PIP_INSET_Y)
+            LayoutChannelRow(btn, chCfg, b + portraitW)
+        else
+            btn.channelRow:Hide()
+            -- spec 切走时如果正在引导，强制收掉
+            btn.channelRow.startTime = nil
+            btn.channelRow.endTime = nil
+        end
+    end
 
     btn.compact = false
     for _, slot in pairs(btn.dotSlots) do slot:SetSize(d, d) end
@@ -553,6 +859,33 @@ local function UpdateBossComboGlow(btn)
     end
 end
 
+-- 更新 boss 框底部 pip 行：读两个印记当前层数 → 染色每格上下两段 + 写两个 X/N 文字
+-- 数据驱动 —— 任何职业的 tStackPips 配好就跑
+-- 不检查 :IsShown() —— 黑名单中的 pip-tracked 咒语 slot 是隐藏的但 stackCount 真实
+-- DoT 自然移除时 ApplyDotRemove 会把 stackCount 重置为 0，所以隐藏 slot 取到的值仍正确
+local function readStacks(slot)
+    return slot and (slot.stackCount or 0) or 0
+end
+local function paintSeg(tex, on, c)
+    if on then tex:SetColorTexture(c[1], c[2], c[3], 1)
+    else       tex:SetColorTexture(PIP_DARK[1], PIP_DARK[2], PIP_DARK[3], 1) end
+end
+local function UpdatePipsForBoss(btn)
+    if not btn.pipRow:IsShown() then return end
+    local cfg = getPipConfig()
+    local topStacks = readStacks(btn.dotSlots[cfg.tSpells[1]])
+    local botStacks = readStacks(btn.dotSlots[cfg.tSpells[2]])
+    local tc, bc = cfg.tColors[1], cfg.tColors[2]
+    for i = 1, cfg.iMaxStacks do
+        local pip = btn.pipRow.pips[i]
+        paintSeg(pip.top, topStacks >= i, tc)
+        paintSeg(pip.bot, botStacks >= i, bc)
+    end
+    btn.pipRow.text1:SetText(string.format(cfg.sTextFormat, topStacks, cfg.iMaxStacks))
+    btn.pipRow.text2:SetText(string.format(cfg.sTextFormat, botStacks, cfg.iMaxStacks))
+end
+MBT.UpdatePipsForBoss = UpdatePipsForBoss
+
 -- Apply a "package" payload onto the frame's slot ("Add" semantics).
 local function ApplyDotAdd(btn, pkg)
     local slot = btn.dotSlots[pkg.sSlotName]
@@ -560,8 +893,23 @@ local function ApplyDotAdd(btn, pkg)
         slot = btn.CreateDotSlot()
         btn.dotSlots[pkg.sSlotName] = slot
     end
-    slot.tex:SetTexture(pkg.icon)
     slot.spellName = pkg.sSpellName    -- 记下当前展示的具体咒语，方便排序变更时重读 iOrder
+    -- 初始 APPLY 时如果 boss 身上已经多层（部分技能首次 apply 就带层数），从 pkg.iStacks 读
+    slot.stackCount = pkg.iStacks or 1
+
+    -- 黑名单中的咒语：只跟踪 stackCount 给 pip 行用，不画图标 / 不参与 dot row 布局
+    -- （能走到这里说明它是 pip-tracked，dispatcher 透传了事件；否则根本不会进 ApplyDotAdd）
+    if MBT.db and MBT.db.profile.tBlacklist[pkg.sSpellName] then
+        slot:Hide()
+        slot.iOrder = nil
+        slot.expirationTime = nil
+        UpdateBossComboGlow(btn)
+        UpdatePipsForBoss(btn)
+        LayoutDotRow(btn)
+        return
+    end
+
+    slot.tex:SetTexture(pkg.icon)
     slot.iOrder = pkg.iOrder or 999
     -- DoT 存在时 -> 显示原始图标颜色（不染色）。过期后由 ApplyDotRemove 改成灰色。
     slot.tex:SetVertexColor(1, 1, 1)
@@ -574,11 +922,10 @@ local function ApplyDotAdd(btn, pkg)
         slot.expirationTime = nil
         slot.timeText:SetText("")
     end
-    -- 初始 APPLY 时如果 boss 身上已经多层（部分技能首次 apply 就带层数），从 pkg.iStacks 读
-    slot.stackCount = pkg.iStacks or 1
     slot.stacks:SetText(pkg.iStacks and tostring(pkg.iStacks) or "")
     UpdateSlotGlow(slot, pkg.iGlowAtStacks, pkg.iStacks)
     UpdateBossComboGlow(btn)
+    UpdatePipsForBoss(btn)
     LayoutDotRow(btn)
 end
 MBT.ApplyDotAdd = ApplyDotAdd
@@ -600,6 +947,7 @@ local function ApplyDotRemove(btn, pkg)
     slot.stackCount = 0
     UpdateSlotGlow(slot, nil, nil)
     UpdateBossComboGlow(btn)
+    UpdatePipsForBoss(btn)
     if MBT.db.profile.bShowMissingDoTs and not pkg.bForceClear then
         slot.tex:SetVertexColor(0.4, 0.4, 0.4)
         slot.cd:Clear()
@@ -622,6 +970,7 @@ local function ApplyDotStack(btn, pkg)
     slot.stacks:SetText(pkg.iStacks and pkg.iStacks > 1 and tostring(pkg.iStacks) or "")
     UpdateSlotGlow(slot, pkg.iGlowAtStacks, pkg.iStacks)
     UpdateBossComboGlow(btn)
+    UpdatePipsForBoss(btn)
 end
 MBT.ApplyDotStack = ApplyDotStack
 
@@ -689,6 +1038,8 @@ local function ApplyZoneSlot(btn, slotData)
     btn.pctText:SetText("100%")
     btn.cast:Hide()
     ClearDots(btn)
+    -- zone 切换：pip 行重置为全暗 + 0/N（如果有配置的话）
+    UpdatePipsForBoss(btn)
 end
 MBT.ApplyZoneSlot = ApplyZoneSlot
 

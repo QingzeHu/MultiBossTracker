@@ -86,7 +86,10 @@ function DotDispatcher:AddDebuff(frameID, name, realInfo)
     if info.tRefreshAura and info.tRefreshAura.bEnabled then
         self:AttemptRefresh(frameID, info.tRefreshAura.tAuras)
     end
-    if not info.sSlotName or not info.bEnabled then return end
+    -- 黑名单：跳过 dispatch，UI 不画图标；例外是 pip 追踪的咒语 —— 要透传到 BossFrame
+    -- 以便 pip 指示器能拿到层数，BossFrame 那边自己决定是否隐藏图标
+    if not info.sSlotName then return end
+    if not info.bEnabled and not info.bPipTracked then return end
     if info.bRemoveFromOtherFrames then
         RemoveDebuffFromOtherFrames(self, frameID, name)
     end

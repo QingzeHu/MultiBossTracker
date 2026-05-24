@@ -840,6 +840,33 @@ local function BuildOptionsTable()
                             }
                             order = order + 1
                         end
+                        -- 术士额外开关：隐藏新增的余烬/暗影印记 pip 行（恢复改动前的 boss 框形态）
+                        if group.sClass == "术士" then
+                            args["_warlock_hide_brand_pips"] = {
+                                order = order, type = "toggle",
+                                name = "隐藏印记层数指示条",
+                                desc = "毁灭术士专属：boss 框底部会出现一条显示余烬印记和暗影印记当前层数的横条（类似盗贼的连击点）。勾选此项后这条指示条会被隐藏，boss 框恢复到没有这条指示的高度。两个印记本身仍然按普通 DoT 图标显示（如未在上方屏蔽）。",
+                                width = "full",
+                                get = function() return MBT.db.profile.bHideBrandPips end,
+                                set = function(_, v)
+                                    MBT.db.profile.bHideBrandPips = v
+                                    if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
+                                end,
+                            }
+                            order = order + 1
+                            args["_warlock_hide_channel_bar"] = {
+                                order = order, type = "toggle",
+                                name = "隐藏吸取灵魂引导条",
+                                desc = "痛苦术士专属：boss 框底部会出现吸取灵魂的引导进度条，红色竖线提示\"该断了去续鬼影缠身\"的最佳位置。勾选此项后这条引导条会被隐藏，boss 框恢复原始高度。",
+                                width = "full",
+                                get = function() return MBT.db.profile.bHideChannelBar end,
+                                set = function(_, v)
+                                    MBT.db.profile.bHideChannelBar = v
+                                    if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
+                                end,
+                            }
+                            order = order + 1
+                        end
                     end
                     return args
                 end)(),

@@ -149,6 +149,64 @@ tAuraData.tSpellsInfos = {
     },
 }
 
+-- 印记层数指示器：boss 框底部一行 N 格"双色叠层"pip，配左侧 X/N 文字
+-- 用途：术士两个印记的层数 corner number 在战斗中扫不到，单独画一行"连击点"风格指示器
+-- 数据驱动 —— 任何职业加同样的 tStackPips 即可获得这条 UI
+tAuraData.tStackPips = {
+    tSpells     = { "Ember Brand", "Shadow Brand" },  -- 顺序 = 每格上半 / 下半的颜色归属
+    tColors     = {
+        { 0.980, 0.350, 0.100 },   -- 余烬橙 #FA591A → 每格上半段
+        { 0.350, 0.050, 0.650 },   -- 暗影紫 #590DA6 → 每格下半段
+    },
+    iMaxStacks  = 6,
+    sTextFormat = "%d/%d",         -- 左侧两个数字格式：余烬/max + 暗影/max
+    -- 只有毁灭天赋才显示这条 UI；其它天赋下 boss 框退回原始形态、不占空间
+    -- 标识符：毁灭专属 talent 赋予的"混沌流星" (技能 ID 1295386)
+    -- 选择技能而不是 talent 点：私服 talent API 返回结构异常（name 是数字串、pts 空），
+    -- 但 IsPlayerSpell 工作正常 —— talent 选/不选会立刻反映到技能学习状态
+    -- 用户也可以在 DoT 黑名单 → 术士 → "隐藏印记层数指示条" 强制关闭这条 UI
+    fnEnabled = function()
+        if MBT.db and MBT.db.profile and MBT.db.profile.bHideBrandPips then return false end
+        if IsPlayerSpell and IsPlayerSpell(1295386) then return true end
+        return false
+    end,
+}
+
+-- 引导技能条配置：在 boss 框底部画一条带 tick 分割的引导进度条
+-- 当前用法：痛苦术士的 Drain Soul (47855) —— 跳数固定 5 跳，4 条分隔线在 20/40/60/80%
+-- 额外 Haunt 续断红线：算出"该断了去续 Haunt"的位置（公式来自 Fojji 的 WA）
+tAuraData.tChannelBar = {
+    iSpellID       = 47855,           -- Drain Soul
+    iTickCount     = 5,               -- 4 条固定分隔线
+    -- 进度条颜色（偏蓝的亮紫，暗副本下也清晰）和文字颜色（淡黄）
+    tBarColor      = { 0.45, 0.30, 0.95, 1.0 },   -- ~#734DF2
+    tDamageColor   = { 1.00, 1.00, 0.60, 1.0 },
+    -- Haunt 续断标记
+    iHauntSpellID  = 48181,           -- 查询 target 上自己的 Haunt debuff 剩余时间用
+    iHasteRefSpell = 6215,            -- Fear (基础 1.5s 施法) —— 用它的当前施法时间反推急速倍率
+    fRangeEstimate = 30,              -- target 距离估算（yd）—— 公式：travel = 0.058 * range
+
+    -- Snapshot DPS delta（基于 Fojji WA 的 WotLK 痛苦术公式）：
+    -- 引导开始时锁定当前法强对应的"基线 DPS"，运行中持续对比"当前 DPS"
+    --   +delta（绿）= proc 触发了 / SP 涨了 → 当前 channel 没吃到 → recast 划算
+    --   -delta（红）= cast 时锁住的 proc 已过期 → 继续吸（channel 还在吃旧 SP）
+    --    delta = 0 = 没变化 → 显示默认 "吸取灵魂" 文字
+    -- 数值跟你私服的实际 DS 平衡数值绑定，下面是 WotLK rank 9 原值；私服改了请对应调整
+    iShadowSchool   = 6,               -- GetSpellBonusDamage(6) = 暗影系
+    fSnapshotBase   = 840,             -- 单跳基础伤害
+    fSnapshotCoef   = 2.145,           -- 法强系数（5 跳 × 单跳系数 0.429）
+    fSnapshotMult   = 5.7152,          -- 1.15(暗影精通) × 1.12(死亡之拥) × 4(执行期 DS 加成)
+                                       -- 默认按执行期算（DS 几乎只在 target HP < 25% 时放）
+                                       -- 想算非执行期改成 1.4288（÷4）；WA 也是写死 ×4 这个值
+    -- 只有痛苦才显示这条 UI；其它天赋下 boss 框不占空间
+    -- 用户也可以在 DoT 黑名单 → 术士 → "隐藏吸取灵魂引导条" 强制关闭
+    fnEnabled = function()
+        if MBT.db and MBT.db.profile and MBT.db.profile.bHideChannelBar then return false end
+        if IsPlayerSpell and IsPlayerSpell(48181) then return true end   -- Haunt（痛苦签名天赋技能）
+        return false
+    end,
+}
+
 -- Combo glow 配置：多个 DoT 同时满足条件时，整个 boss 框体亮起特效
 -- 用途：双 6 层印记 = 终结技窗口，给玩家一个"现在可以放！"的强信号
 tAuraData.tComboGlows = {

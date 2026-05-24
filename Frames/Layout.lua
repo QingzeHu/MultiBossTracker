@@ -19,12 +19,16 @@ local function isCompact() return MBT.db.profile.iSkin == 1 end
 local function getDotSize() return MBT.db.profile.iDotSize or 32 end
 
 local function getRowHeight()
-    local d = getDotSize()
-    if isCompact() then
-        -- 1px 上 + DoT + 1px 下
-        return d + BORDER * 2
+    -- 优先读真实 frame 高度 —— applyStandard/Compact 已把 pip 行加高算进去了
+    -- 这样不用在两处重复 pip 高度逻辑，且 pip 显隐切换时间距自动跟上
+    local btn = MBT.BossFrames and MBT.BossFrames["A"]
+    if btn then
+        local h = btn:GetHeight()
+        if h and h > 0 then return h end
     end
-    -- 1 + HP + 1 + DoT + 1，HP 高度 = max(30, DoT)
+    -- 兜底：frames 还没被 ApplyCompactMode 跑过时（理论上不会发生，STATUS 必先布局）
+    local d = getDotSize()
+    if isCompact() then return d + BORDER * 2 end
     local hpH = math.max(HP_HEIGHT_MIN, d)
     return BORDER + hpH + BORDER + d + BORDER
 end
@@ -97,7 +101,9 @@ dragBar:SetScript("OnDragStop", function()
     end
 end)
 
-dragBar:Hide()    -- 默认锁定，所以隐藏
+-- 创建时先隐藏，避免插件加载到 STATUS 事件之间那一帧的视觉闪烁
+-- STATUS handler 会按 db.bLocked 重设：默认 bLocked = false → 拖动条 Show，可拖动
+dragBar:Hide()
 container.dragBar = dragBar
 
 local function SetLocked(locked)
@@ -269,3 +275,26 @@ targetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 targetFrame:SetScript("OnEvent", function() MBT:UpdateTargetHighlight() end)
 -- 区域 / 遭遇切换后也重判一次（boss 阵容可能变了）
 MBT:RegisterMDFEvent("MultiBossTracker_ChangeZone", function() MBT:UpdateTargetHighlight() end)
+
+-- 天赋/spec 切换：旧天赋的 DoT 不再可被刷新，全量清空 + 按新 spec 重排（pip 行可能出现/消失）
+-- PLAYER_SPECIALIZATION_CHANGED 带 unit 参数，只关心 player 自己
+-- 事件触发时 GetSpecialization() 可能仍返回旧 spec —— 100ms 后再跑 layout，确保读到新值
+local specFrame = CreateFrame("Frame")
+specFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+specFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+local pendingSpecRefresh = false
+local function refreshForSpecChange()
+    pendingSpecRefresh = false
+    for _, fid in ipairs(FRAME_IDS) do
+        local btn = MBT.BossFrames[fid]
+        if btn and MBT.ClearDots then MBT.ClearDots(btn) end
+    end
+    -- ApplyCompactToAll → applyStandard/Compact → pipRow Show/Hide + UpdatePipsForBoss
+    ApplyCompactToAll()
+end
+specFrame:SetScript("OnEvent", function(_, event, unit)
+    if event == "PLAYER_SPECIALIZATION_CHANGED" and unit ~= "player" then return end
+    if pendingSpecRefresh then return end
+    pendingSpecRefresh = true
+    C_Timer.After(0.1, refreshForSpecChange)
+end)

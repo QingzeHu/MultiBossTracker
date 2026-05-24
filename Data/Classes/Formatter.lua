@@ -93,6 +93,19 @@ local function SetupBlacklist(tAuraData, blacklist)
     end
 end
 
+-- 标记 tStackPips 引用的咒语为"pip 追踪"：即便用户在黑名单关掉它们的图标显示，
+-- dispatcher 仍要把事件透传到 BossFrame，让 pip 指示器能读到 stackCount
+local function MarkPipTrackedSpells(tAuraData)
+    -- 先清掉上一轮的标记（用户刚解绑黑名单时配置不应残留）
+    for _, v in pairs(tAuraData.tSpellsInfos) do v.bPipTracked = nil end
+    local pips = tAuraData.tStackPips
+    if not pips or not pips.tSpells then return end
+    for _, name in ipairs(pips.tSpells) do
+        local info = tAuraData.tSpellsInfos[name]
+        if info then info.bPipTracked = true end
+    end
+end
+
 local function SetupDoTOrder(tAuraData, order)
     -- 先清空所有 iOrder（避免上一次设置遗留）
     for _, info in pairs(tAuraData.tSpellsInfos) do info.iOrder = nil end
@@ -139,6 +152,7 @@ local function FormatAndBroadcast()
     SetupSpellData(tAuraData)
     SetupSpellGroups(tAuraData)
     SetupBlacklist(tAuraData, tAuraData.tBlacklist)
+    MarkPipTrackedSpells(tAuraData)
     SetupDoTOrder(tAuraData, tAuraData.tForceDoTOrder)
     tAuraData.fnCheckTalentsAndGlyphs = function() CheckTalentsAndGlyphs(tAuraData) end
     CheckTalentsAndGlyphs(tAuraData)
