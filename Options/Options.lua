@@ -584,7 +584,7 @@ local SPELL_BLACKLIST_BY_CLASS = {
         tSpells = {
             { sKey = "Shadow Word: Pain", sLabel = "暗言术：痛" },
             { sKey = "Vampiric Touch",    sLabel = "吸血鬼之触" },
-            { sKey = "Devouring Plague",  sLabel = "吞噬瘟疫" },
+            { sKey = "Devouring Plague",  sLabel = "噬灵疫病" },
         },
     },
     {

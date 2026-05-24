@@ -19,8 +19,7 @@ Thumbs.db
 CLAUDE.md
 .github/copilot/
 
-# 开发文档（不上传给最终用户）
-CHANGELOG.md
+# 开发文档（git 跟踪，但 release 打包时排除）
 PRO_PLAN.md
 LISTING.md
 TEXTURE-SOURCES.md
