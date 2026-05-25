@@ -876,38 +876,11 @@ local function BuildOptionsTable()
                 order = 3, type = "group", name = "点击施法",
                 childGroups = "tree",
                 args = (function()
-                    local args = {
-                        _mode = {
-                            order = 0, type = "group", name = "施法模式",
-                            args = {
-                                intro = {
-                                    order = 1, type = "description",
-                                    name = "选择 boss 框上鼠标点击的行为方式 —— 两种模式互斥。\n\n" ..
-                                           "|cFFFFD200修饰键模式|r：经典点击施法。在下方各职业 Tab 里配 8 个修饰键 × 5 个鼠标键组合，每个组合释放一个咒语。\n\n" ..
-                                           "|cFFFFD200DoT 点击模式|r：键盘苦手友好。boss 框 DoT 行里的图标本身就是技能按钮 —— 点哪个 DoT 图标，就对那只 boss 释放那个技能；boss 框其它区域（头像/血条/施法条）只切目标，修饰键全部失效。\n\n" ..
-                                           "DoT 排序 Tab 里配的技能顺序在两种模式下通用：决定显示顺序。\n",
-                                },
-                                mode = {
-                                    order = 2, type = "select", name = "模式",
-                                    values = {
-                                        modifier = "修饰键模式（经典）",
-                                        dotclick = "DoT 点击模式",
-                                    },
-                                    width = 1.5,
-                                    get = function() return MBT.db.profile.sClickMode or "modifier" end,
-                                    set = function(_, v)
-                                        MBT.db.profile.sClickMode = v
-                                        if MBT.FireEvent then MBT:FireEvent("MultiBossTracker_ClickModeChanged") end
-                                    end,
-                                },
-                            },
-                        },
-                    }
+                    local args = {}
                     for i, cg in ipairs(CLASS_GROUPS) do
                         args[cg.key] = {
-                            order = i + 10, type = "group", name = cg.label,
+                            order = i, type = "group", name = cg.label,
                             args = buildClassBindingsGroup(cg),
-                            disabled = function() return MBT.db.profile.sClickMode == "dotclick" end,
                         }
                     end
                     return args

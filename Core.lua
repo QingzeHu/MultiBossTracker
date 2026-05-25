@@ -89,11 +89,6 @@ MBT.defaults = {
         bUse3DPortrait = true,           -- 头像类型：true=3D 模型，false=2D 静态贴图（更省 GPU）
         bHideBrandPips = false,          -- true = 隐藏毁灭术士的余烬/暗影印记 pip 行，boss 框退回原始形态
         bHideChannelBar = false,         -- true = 隐藏痛苦术士的吸取灵魂引导条，boss 框退回原始形态
-
-        -- 点击施法模式：
-        --   "modifier" = 经典模式：修饰键 + 鼠标键组合释放配好的咒语（默认）
-        --   "dotclick" = DoT 点击模式：DoT 图标 = 重放该 DoT；boss 框其它区域只切目标，修饰键全失效
-        sClickMode = "modifier",
         fHealthUpdateInterval = 0.1,     -- seconds between raid scans (DPS 输出时血量很关键，默认尽量实时)
         fUpdateRate = 0.1,               -- HP bar smoothing rate
         bClassicBarDynamicHeight = false,

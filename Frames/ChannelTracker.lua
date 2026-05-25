@@ -27,7 +27,7 @@ local function getHauntRemainingOnTarget(hauntSpellID)
     local hauntName = GetSpellInfo(hauntSpellID)
     if not hauntName or not UnitExists("target") then return nil end
     -- 按 index 迭代 target 上的 debuff（这是 DotDispatcher 已验证能用的模式，
-    -- 比 UnitDebuff(unit, name, rank, "PLAYER") 的 filter form 更可靠）
+    -- 比 UnitDebuff(unit, name, rank, "PLAYER") 的 filter form 在私服上更可靠）
     for i = 1, 40 do
         local name, _, _, _, _, expirationTime, caster = UnitDebuff("target", i)
         if not name then break end

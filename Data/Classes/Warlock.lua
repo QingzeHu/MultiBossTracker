@@ -44,7 +44,7 @@ tAuraData.tDotAuras = {
     [1490] = "Curse of the Elements", [11721] = "Curse of the Elements",
     [11722] = "Curse of the Elements", [27228] = "Curse of the Elements",
     [47865] = "Curse of the Elements",
-    -- 自定义印记 debuff
+    -- 自定义印记 debuff（私服扩展）
     [1295144] = "Ember Brand",
     [1295140] = "Shadow Brand",
     [29341]   = "Shadowburn",
@@ -70,20 +70,14 @@ tAuraData.tDamageInfos = {
     },
 }
 
--- iCastSpellID（可选字段）：DoT 点击模式用来生成 `/cast [@boss] <spell>` 宏
---   有 ID = 点击该 slot 释放该咒语（用 GetSpellInfo 转本地化名字进宏）
---   nil  = 该 DoT 没有直接对应的释放咒语（如 Shadow Embrace 由暗影箭附带）→ DoT 点击模式下 slot 隐藏
---   未来想 map 间接 DoT 到某个咒语（如 Shadow Embrace → Shadow Bolt），改这个 ID 即可
 tAuraData.tSpellsInfos = {
     ["Corruption"] = {
         iDuration = 18, sName = "Corruption", iIcon = 136118,
-        iCastSpellID = 47813,
         iColorR = 0.213, iColorG = 0.267, iColorB = 0.945,
         bAffectedByHaste = true,
     },
     ["Haunt"] = {
         iDuration = 12, sName = "Haunt", iIcon = 236298,
-        iCastSpellID = 59164,
         iColorR = 0.000, iColorG = 0.757, iColorB = 1.000,
         bRemoveFromOtherFrames = true,
         tRefreshAura = {
@@ -93,34 +87,26 @@ tAuraData.tSpellsInfos = {
     },
     ["Curse of Agony"] = {
         iDuration = 24, sName = "Curse of Agony", sGroup = "Curses", iIcon = 136139,
-        iCastSpellID = 47864,
         iColorR = 0.529, iColorG = 0.529, iColorB = 0.929,
     },
     ["Curse of the Elements"] = {
         iDuration = 300, sName = "Curse of the Elements", sGroup = "Curses", iIcon = 136130,
-        iCastSpellID = 47865,
         iColorR = 0.329, iColorG = 0.000, iColorB = 0.654,
     },
     ["Curse of Doom"] = {
         iDuration = 60, sName = "Curse of Doom", sGroup = "Curses", iIcon = 136122,
-        iCastSpellID = 47867,
         iColorR = 0.329, iColorG = 0.000, iColorB = 0.654,
     },
     ["Shadow Embrace"] = {
         iDuration = 12, sName = "Shadow Embrace", iIcon = 136198,
-        -- Shadow Embrace 是暗影箭/鬼影缠身附带的 debuff，没直接释放咒语
-        -- map 到暗影箭（686）—— 点击该 slot = 放一发暗影箭顺带刷新 Shadow Embrace
-        iCastSpellID = 47809,
         iColorR = 0.329, iColorG = 0.315, iColorB = 0.854,
     },
     ["Unstable Affliction"] = {
         iDuration = 15, sName = "Unstable Affliction", sGroup = "Immolation", iIcon = 136228,
-        iCastSpellID = 47843,
         iColorR = 1.000, iColorG = 0.647, iColorB = 0.031,
     },
     ["Immolation"] = {
         iDuration = 15, sName = "Immolation", sGroup = "Immolation", iIcon = 135817,
-        iCastSpellID = 47811,   -- 献祭（Immolate）—— cast 咒语名跟 debuff 名不同：cast = "献祭" / debuff = "灼烧"
         iColorR = 1.000, iColorG = 0.647, iColorB = 0.031,
         iTalentedDuration = {
             iTalentPage = 2, iTalentID = 16,
@@ -129,7 +115,6 @@ tAuraData.tSpellsInfos = {
     },
     ["Seed of Corruption"] = {
         iDuration = 18, sName = "Seed of Corruption", sGroup = "Corruption", iIcon = 136193,
-        iCastSpellID = 47836,
         iColorR = 0.321, iColorG = 0.047, iColorB = 0.331,
     },
     ["Drain Soul"] = {
@@ -146,24 +131,20 @@ tAuraData.tSpellsInfos = {
     },
     ["Ember Brand"] = {
         iDuration = 12, sName = "Ember Brand", iIcon = 135265,
-        iCastSpellID = 47838,   -- 烧尽 —— 点击 = 放一发烧尽叠余烬印记
         iColorR = 0.980, iColorG = 0.350, iColorB = 0.100,
         iGlowAtStacks = 6,    -- 单印记满 6 → DoT 图标上轻微旋转火花（信息性）
     },
     ["Shadow Brand"] = {
         iDuration = 12, sName = "Shadow Brand", iIcon = 425951,
-        iCastSpellID = 47809,     -- map 到暗影箭 —— 点击 = 放一发暗影箭刷新暗影印记
         iColorR = 0.350, iColorG = 0.050, iColorB = 0.650,
         iGlowAtStacks = 6,
     },
     ["Shadowburn"] = {
         iDuration = 5, sName = "Shadowburn", iIcon = 136191,
-        iCastSpellID = 29341,
         iColorR = 0.650, iColorG = 0.100, iColorB = 0.500,
     },
     ["Conflagrate"] = {
         iDuration = 10, sName = "Conflagrate", iIcon = 135807,
-        iCastSpellID = 17962,
         iColorR = 0.950, iColorG = 0.450, iColorB = 0.150,
     },
 }
@@ -181,7 +162,7 @@ tAuraData.tStackPips = {
     sTextFormat = "%d/%d",         -- 左侧两个数字格式：余烬/max + 暗影/max
     -- 只有毁灭天赋才显示这条 UI；其它天赋下 boss 框退回原始形态、不占空间
     -- 标识符：毁灭专属 talent 赋予的"混沌流星" (技能 ID 1295386)
-    -- 选择技能而不是 talent 点：talent API 返回结构异常（name 是数字串、pts 空），
+    -- 选择技能而不是 talent 点：私服 talent API 返回结构异常（name 是数字串、pts 空），
     -- 但 IsPlayerSpell 工作正常 —— talent 选/不选会立刻反映到技能学习状态
     -- 用户也可以在 DoT 黑名单 → 术士 → "隐藏印记层数指示条" 强制关闭这条 UI
     fnEnabled = function()
@@ -210,7 +191,7 @@ tAuraData.tChannelBar = {
     --   +delta（绿）= proc 触发了 / SP 涨了 → 当前 channel 没吃到 → recast 划算
     --   -delta（红）= cast 时锁住的 proc 已过期 → 继续吸（channel 还在吃旧 SP）
     --    delta = 0 = 没变化 → 显示默认 "吸取灵魂" 文字
-    -- 数值跟实际 DS 平衡绑定，下面是 WotLK rank 9 原值；游戏版本不同请对应调整
+    -- 数值跟你私服的实际 DS 平衡数值绑定，下面是 WotLK rank 9 原值；私服改了请对应调整
     iShadowSchool   = 6,               -- GetSpellBonusDamage(6) = 暗影系
     fSnapshotBase   = 840,             -- 单跳基础伤害
     fSnapshotCoef   = 2.145,           -- 法强系数（5 跳 × 单跳系数 0.429）
