@@ -158,6 +158,7 @@ MBT:RegisterLocale("zhCN", {
     ["Sapphiron's Lair"]       = "萨菲隆之巢",
     ["Kel'Thuzad's Lair"]      = "克尔苏加德的大厅",
     ["Loatheb's Chamber"]      = "死灵穹顶",
+    ["Thaddius's Chamber"]     = "复活大厅",
     -- Spider wing
     ["Anub'Rekhan"]            = "阿努布雷坎",
     ["Grand Widow Faerlina"]   = "黑女巫法琳娜",
@@ -179,6 +180,8 @@ MBT:RegisterLocale("zhCN", {
     ["Grobbulus"]              = "格罗布鲁斯",
     ["Gluth"]                  = "格拉斯",
     ["Thaddius"]               = "塔迪乌斯",
+    ["Feugen"]                 = "费尔根",
+    ["Stalagg"]                = "斯塔拉格",
     -- Frostwyrm wing
     ["Sapphiron"]              = "萨菲隆",
     ["Kel'Thuzad"]             = "克尔苏加德",

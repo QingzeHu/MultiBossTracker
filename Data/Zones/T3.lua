@@ -53,6 +53,12 @@ tZonesData.tZones = {
             [1120] = { ["A"] = { sNPCID = "15928", sTarName = "Thaddius",  iIcon = 136015 } },
         },
     },
+    -- 塔迪乌斯房间在 MoP Classic 客户端有独立 subzone（"复活大厅"），boss + 两个连体小怪同框追踪
+    ["Thaddius's Chamber"] = {
+        ["A"] = { sNPCID = "15928", sTarName = "Thaddius", iIcon = 136015 },
+        ["B"] = { sNPCID = "15930", sTarName = "Feugen",   iIcon = 136015 },
+        ["C"] = { sNPCID = "15929", sTarName = "Stalagg",  iIcon = 136015 },
+    },
     -- Frostwyrm 翼有独立的 boss 房 subzone（萨菲隆之巢 / 克尔苏加德之巢），分开建表
     ["Sapphiron's Lair"] = {
         ["A"] = { sNPCID = "15989", sTarName = "Sapphiron",  iIcon = 135862 },

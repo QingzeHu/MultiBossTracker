@@ -170,7 +170,11 @@ local PHASES = {
                     { name = "帕奇维克",       npcID = "16028" },
                     { name = "格罗布鲁斯",     npcID = "15931" },
                     { name = "格拉斯",         npcID = "15932" },
-                    { name = "塔迪乌斯",       npcID = "15928" },
+                    { name = "塔迪乌斯",       npcID = "15928",
+                      adds = {
+                          { name = "费尔根",   npcID = "15930" },
+                          { name = "斯塔拉格", npcID = "15929" },
+                      } },
                 },
             },
             {

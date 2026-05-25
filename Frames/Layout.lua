@@ -70,7 +70,7 @@ dragBar:SetBackdropBorderColor(0.75, 0.55, 0.20, 1)     -- 浅金属金边
 local label = dragBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 -- WoW 字体的 baseline 比几何中心稍偏下，垂直居中要往上挪 1px 视觉才正
 label:SetPoint("CENTER", dragBar, "CENTER", 0, 1)
-label:SetText("::  多目标 Boss 追踪  ::")
+label:SetText("多目标 Boss 追踪")
 label:SetTextColor(1, 0.85, 0.4, 1)
 
 -- 鼠标悬停时浅高亮，提供"可点击"反馈
