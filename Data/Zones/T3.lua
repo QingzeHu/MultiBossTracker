@@ -8,7 +8,7 @@ tZonesData.tBlacklistKey = "tT3"
 tZonesData.tZones = {
     -- 纳克萨玛斯 ----------------------------------------------------------
     -- 每翼一个 zone（subzone 走翼级名）；翼内 boss 全部作为候选框。
-    -- 如果某个 boss 房有更精确的 subzone（如已知的天启四骑士议事厅），
+    -- 如果某个 boss 房有更精确的 subzone（如已知的骑士议会厅 / 4HM 房间），
     -- 单独再开一个 zone entry 即可。
     -- 每翼的 boss 房没有独立 subzone（除天启议事厅 / Frostwyrm 之外），
     -- 用毒蛇神殿那套：Encounters 链路 + 不写 iStartingFight
@@ -27,6 +27,10 @@ tZonesData.tZones = {
             [1115] = { ["A"] = { sNPCID = "16011", sTarName = "Loatheb",                iIcon = 136045 } },
         },
     },
+    -- 洛欧塞布房间在 MoP Classic 客户端有独立 subzone（"死灵穹顶"），用单 boss entry 直接命中
+    ["Loatheb's Chamber"] = {
+        ["A"] = { sNPCID = "16011", sTarName = "Loatheb", iIcon = 136045 },
+    },
     ["The Military Quarter"] = {
         ["Encounters"] = {
             [1113] = { ["A"] = { sNPCID = "16061", sTarName = "Instructor Razuvious", iIcon = 132326 }, iNextEncounter = 1109 },
@@ -35,9 +39,10 @@ tZonesData.tZones = {
     },
     -- 4HM 在军事区里有自己的精确 subzone（议事厅）—— 单独保留
     ["The Horsemen's Assembly"] = {
-        ["A"] = { sNPCID = "30549", sTarName = "Baron Rivendare", iIcon = 132264, tEnabledOptions = {"b4HMFight","bRivendare"} },
+        -- 顺序：女公爵 / 领主 / 男爵 / 爵士
+        ["A"] = { sNPCID = "16065", sTarName = "Lady Blaumeux",   iIcon = 136192, tEnabledOptions = {"b4HMFight","bBlaumeux"} },
         ["B"] = { sNPCID = "16064", sTarName = "Thane Korth'azz", iIcon = 135821, tEnabledOptions = {"b4HMFight","bThane"} },
-        ["C"] = { sNPCID = "16065", sTarName = "Lady Blaumeux",   iIcon = 136192, tEnabledOptions = {"b4HMFight","bBlaumeux"} },
+        ["C"] = { sNPCID = "30549", sTarName = "Baron Rivendare", iIcon = 132264, tEnabledOptions = {"b4HMFight","bRivendare"} },
         ["D"] = { sNPCID = "16063", sTarName = "Sir Zeliek",      iIcon = 135972, tEnabledOptions = {"b4HMFight","bZeliek"} },
     },
     ["The Construct Quarter"] = {

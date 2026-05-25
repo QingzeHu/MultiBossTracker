@@ -96,8 +96,13 @@ local function CreateBossFrame(frameID, parent)
     if BackdropTemplateMixin then templates = templates .. ", BackdropTemplate" end
     local btn = CreateFrame("Button", "MultiBossTracker_Slot" .. frameID, parent, templates)
     btn:SetSize(260, 60)   -- 占位尺寸，ApplyCompactMode 在 STATUS 时立刻覆盖
-    -- 显式列出 5 个按钮，避免某些 Classic 客户端 "AnyUp" 不包含 Button4/5 的边界情况
-    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up")
+    -- 显式列出 5 个按钮的 Up + Down，避免某些 Classic 客户端 "AnyUp/AnyDown" 不包含 Button4/5 的边界情况。
+    -- 同时注册 Down：暴雪 DF 后把 ActionButtonUseKeyDown CVar 默认值改成 1，安全派发层会按 CVar
+    -- 匹配 down 状态，只接 Up 时该 CVar=1 的用户点击不会触发宏。两边都接，CVar 任意值都派发一次。
+    btn:RegisterForClicks(
+        "LeftButtonUp", "RightButtonUp", "MiddleButtonUp", "Button4Up", "Button5Up",
+        "LeftButtonDown", "RightButtonDown", "MiddleButtonDown", "Button4Down", "Button5Down"
+    )
     -- 记录最近一次点击：UI_ERROR_MESSAGE 收到 facing 错误时用来定位是哪个 boss 框点的
     -- 同时：如果这个 boss 处于"facing 模式"（最近有过 facing 错误），用户继续狂点视为继续在错
     --      → 直接刷新 1.5s 闪烁 + 续期模式过期时间。绕过 UI_ERROR_MESSAGE 的节流抑制
@@ -199,7 +204,8 @@ local function CreateBossFrame(frameID, parent)
     -- 状态提示文字：HP 内嵌右上角，单一 FontString 按状态切显示
     -- 状态："range" → 黄色"超出范围"（持续）；"facing" → 橙色"面对目标"（闪 1.5s）
     -- facing 闪烁期间优先级高于 range（更紧迫的信号）
-    local statusText = hp:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    -- 字号比默认 GameFontNormal 小 2pt（→ Small），避免和 pctText 在右侧纵向重合
+    local statusText = hp:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     statusText:SetPoint("TOPRIGHT", hp, "TOPRIGHT", -3, -2)
     statusText:SetText("")
     btn.statusText = statusText

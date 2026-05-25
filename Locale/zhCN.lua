@@ -157,6 +157,7 @@ MBT:RegisterLocale("zhCN", {
     ["The Construct Quarter"]  = "构造区",
     ["Sapphiron's Lair"]       = "萨菲隆之巢",
     ["Kel'Thuzad's Lair"]      = "克尔苏加德的大厅",
+    ["Loatheb's Chamber"]      = "死灵穹顶",
     -- Spider wing
     ["Anub'Rekhan"]            = "阿努布雷坎",
     ["Grand Widow Faerlina"]   = "黑女巫法琳娜",
@@ -168,7 +169,7 @@ MBT:RegisterLocale("zhCN", {
     -- Military wing
     ["Instructor Razuvious"]   = "教官拉苏维奥斯",
     ["Gothik the Harvester"]   = "收割者戈提克",
-    ["The Horsemen's Assembly"] = "天启四骑士议事厅",
+    ["The Horsemen's Assembly"] = "骑士议会厅",
     ["Baron Rivendare"]        = "瑞文戴尔男爵",
     ["Thane Korth'azz"]        = "塞恩·寇斯加",
     ["Lady Blaumeux"]          = "布劳缪克斯小姐",
