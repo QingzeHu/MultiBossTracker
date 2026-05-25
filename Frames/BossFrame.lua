@@ -348,8 +348,11 @@ local function CreateBossFrame(frameID, parent)
     channelRow.dmgText = dmgText
 
     -- Each DoT slot: texture + cooldown swipe + our own centered countdown text + stack count.
+    -- 用 Button + SecureActionButtonTemplate，给 DoT 点击模式留接口；默认 EnableMouse(false) →
+    -- 修饰键模式下点击穿透回 boss 框，行为完全跟改造前一致。dot-click 模式开启时再 EnableMouse(true)
     local function CreateDotSlot()
-        local f = CreateFrame("Frame", nil, dotRow)
+        local f = CreateFrame("Button", nil, dotRow, "SecureActionButtonTemplate")
+        f:EnableMouse(false)
         local s = getDotSize()
         f:SetSize(s, s)
 
@@ -421,6 +424,13 @@ local function getChannelConfig()
     return cfg
 end
 MBT.GetChannelConfig = getChannelConfig
+
+-- DoT 点击模式：profile.sClickMode == "dotclick" 时，DoT 图标变成可点击的咒语按钮
+-- 修饰键模式（默认）下此函数返回 false，所有 DoT 图标默认 EnableMouse(false) 不抢点击
+function MBT:IsDotClickMode()
+    return MBT.db and MBT.db.profile and MBT.db.profile.sClickMode == "dotclick"
+end
+
 -- 底部指示器额外占用的垂直空间。pip 行 / channel 行复用同一块空间（不同 spec 互斥），
 -- 任一激活就加高
 local function pipExtraH()
@@ -712,9 +722,136 @@ local function ClearDots(btn)
         f:Hide()
         f.iOrder = nil
         f.cd:Clear()
+        f.preRendered = nil   -- 清掉 dot-click 预渲染标记
     end
 end
 MBT.ClearDots = ClearDots
+
+-- ---------------------------------------------------------------------
+-- DoT 点击模式：按用户的 DoT 排序配置，给每个 boss 框预渲染可点击的灰色 DoT 图标
+-- ---------------------------------------------------------------------
+-- 预渲染条件：
+--   1. 用户当前是 DoT 点击模式（sClickMode == "dotclick"）
+--   2. 已知该 boss 名字（btn.targetName 由 ApplyZoneSlot 设）
+--   3. 出战外（SecureActionButton 属性不能战斗中改）
+--   4. 槽位对应的咒语有 iCastSpellID（直接对应释放咒语）且未被黑名单
+-- 每个槽位写一条宏：`/cast [@<boss_name>] <localized_spell_name>` —— 点击释放但不切目标
+function MBT:RebuildDotClickSlots(btn)
+    if not btn or not btn.dotSlots or not btn.CreateDotSlot then return end
+    if not self:IsDotClickMode() then return end
+    if not btn.targetName or btn.targetName == "" then return end
+    if InCombatLockdown() then return end
+
+    local cd = MBT.formattedClassData
+    if not cd or not cd.tSpellsInfos then return end
+
+    -- 先清掉所有现存槽位的预渲染标记 + 属性，再按当前 valid 列表重建
+    -- 这样 BlacklistChanged / DoT 排序改动后，被移出列表的槽位会正确"反预渲染"
+    for _, slot in pairs(btn.dotSlots) do
+        if slot.preRendered then
+            slot.preRendered = nil
+            slot:EnableMouse(false)
+            slot:SetAttribute("*type1", nil)
+            slot:SetAttribute("*macrotext1", nil)
+            slot:SetAttribute("*type2", nil)
+            slot:SetAttribute("*macrotext2", nil)
+        end
+    end
+
+    -- 按 slot 位置收集需要预渲染的咒语（info.iOrder 在 Formatter 里由 SetupDoTOrder 写入）
+    -- 所有 iOrder 配置的 + 未黑名单的咒语都预渲染（用户在排序里加了就显示）
+    -- iCastSpellID 是否存在只决定"是否可点击"，不决定"是否显示"
+    local slotToInfo = {}
+    for _, info in pairs(cd.tSpellsInfos) do
+        if info.iOrder and info.bEnabled ~= false then
+            slotToInfo[info.iOrder] = info
+        end
+    end
+
+    for slotPos = 1, MAX_DOT_SLOTS do
+        local info = slotToInfo[slotPos]
+        if info then
+            local slotKey = info.sSlotName or info.sName
+            local slot = btn.dotSlots[slotKey]
+            if not slot then
+                slot = btn.CreateDotSlot()
+                btn.dotSlots[slotKey] = slot
+            end
+            -- 预渲染：灰色图标 + 清空冷却/时间/层数
+            slot.tex:SetTexture(info.iIcon)
+            slot.tex:SetVertexColor(0.4, 0.4, 0.4)
+            slot.iOrder = slotPos
+            slot.spellName = info.sName
+            slot.preRendered = true
+            slot.cd:Clear()
+            slot.expirationTime = nil
+            if slot.timeText then slot.timeText:SetText("") end
+            if slot.stacks then slot.stacks:SetText("") end
+            slot:Show()
+
+            -- 只有 iCastSpellID 配了的才设可点击宏；没配的（如 Shadow Embrace 由暗影箭附带）只展示不可点
+            local castName = info.iCastSpellID and GetSpellInfo(info.iCastSpellID)
+            if castName then
+                -- 用跟现有 ClickCast.lua 一致的"切目标→施法→还原"多行模式
+                local macro =
+                    "/tar [@target,noexists] player\n" ..
+                    "/cleartarget\n" ..
+                    "/targetlasttarget\n" ..
+                    "/targetexact " .. btn.targetName .. "\n" ..
+                    "/cast " .. castName .. "\n" ..
+                    "/targetlasttarget\n" ..
+                    "/targetlasttarget [@target,noexists]\n" ..
+                    "/cleartarget [@target,help]\n"
+                slot:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+                slot:SetAttribute("*type1", "macro")
+                slot:SetAttribute("*macrotext1", macro)
+                slot:SetAttribute("*type2", "macro")
+                slot:SetAttribute("*macrotext2", macro)
+                slot:EnableMouse(true)
+            else
+                -- 无可释放咒语：保持纯展示，不响应鼠标
+                slot:EnableMouse(false)
+                slot:SetAttribute("*type1", nil)
+                slot:SetAttribute("*macrotext1", nil)
+                slot:SetAttribute("*type2", nil)
+                slot:SetAttribute("*macrotext2", nil)
+            end
+        end
+    end
+    -- 重建后，任何之前是 preRendered 但本轮没被重新加入、且当前没有 active DoT 的槽位，hide 掉
+    for _, slot in pairs(btn.dotSlots) do
+        if not slot.preRendered and (slot.stackCount or 0) == 0 then
+            slot:Hide()
+            slot.iOrder = nil
+            slot.tex:SetVertexColor(1, 1, 1)
+        end
+    end
+    if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
+end
+
+-- 退出 DoT 点击模式：清掉所有 preRendered 标记 + EnableMouse(false)
+-- 无 active DoT 的预渲染槽位直接隐藏（恢复到修饰键模式默认状态）
+function MBT:TearDownDotClickSlots(btn)
+    if not btn or not btn.dotSlots then return end
+    if InCombatLockdown() then return end
+    for _, slot in pairs(btn.dotSlots) do
+        if slot.preRendered then
+            slot.preRendered = nil
+            slot:EnableMouse(false)
+            slot:SetAttribute("*type1", nil)
+            slot:SetAttribute("*macrotext1", nil)
+            slot:SetAttribute("*type2", nil)
+            slot:SetAttribute("*macrotext2", nil)
+            -- 若该 slot 当前没有真实激活的 DoT，恢复成隐藏状态
+            if (slot.stackCount or 0) == 0 then
+                slot:Hide()
+                slot.iOrder = nil
+                slot.tex:SetVertexColor(1, 1, 1)
+            end
+        end
+    end
+    if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
+end
 
 -- 用户改了 DoT 排序后，从最新的 spellInfos 拉一遍 iOrder 重排所有现存槽位。
 -- 不用等下次 DoT 刷新就能看到顺序变化。
@@ -933,6 +1070,10 @@ MBT.ApplyDotAdd = ApplyDotAdd
 local function ApplyDotRefresh(btn, pkg)
     local slot = btn.dotSlots[pkg.sSlotName]
     if not slot or not slot:IsShown() then return end
+    -- 必须已经有活跃 DoT（expirationTime 已设）才能"刷新"延长
+    -- 否则在 DoT-click 模式下预渲染的空槽位会被假 cooldown 误启动
+    -- （比如打 Shadow Bolt 触发 Corruption refresh，但 boss 身上并没有 Corruption）
+    if not slot.expirationTime then return end
     if pkg.duration and pkg.expirationTime then
         slot.cd:SetCooldown(pkg.expirationTime - pkg.duration, pkg.duration)
         slot.expirationTime = pkg.expirationTime
@@ -948,7 +1089,10 @@ local function ApplyDotRemove(btn, pkg)
     UpdateSlotGlow(slot, nil, nil)
     UpdateBossComboGlow(btn)
     UpdatePipsForBoss(btn)
-    if MBT.db.profile.bShowMissingDoTs and not pkg.bForceClear then
+    -- DoT 点击模式预渲染的 slot 必须永远保持可见（灰色），不管 bShowMissingDoTs 是什么
+    -- 否则用户点不到、就失去了 DoT 点击模式的意义
+    local keepVisible = slot.preRendered or MBT.db.profile.bShowMissingDoTs
+    if keepVisible and not pkg.bForceClear then
         slot.tex:SetVertexColor(0.4, 0.4, 0.4)
         slot.cd:Clear()
         slot.expirationTime = nil

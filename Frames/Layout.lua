@@ -243,8 +243,50 @@ MBT:RegisterMDFEvent("MultiBossTracker_CastEnded", function(_, frameID, pkg)
 end)
 
 -- formatter 完成后（每次 STATUS / Bindings/Blacklist 变化都会跑），重排现存 DoT 槽位
+-- + DoT 点击模式下也要按新的排序/黑名单重建预渲染槽位
 MBT:RegisterMDFEvent("MultiBossTracker_ClassData_Formatted", function()
     if MBT.RefreshAllDotOrders then MBT:RefreshAllDotOrders() end
+    if MBT.IsDotClickMode and MBT:IsDotClickMode() then
+        for _, fid in ipairs(FRAME_IDS) do
+            local btn = MBT.BossFrames[fid]
+            if btn and MBT.RebuildDotClickSlots then MBT:RebuildDotClickSlots(btn) end
+        end
+    end
+end)
+
+-- DoT 点击模式下 zone 切换：boss 名字变了，槽位上写死的 `/cast [@boss] spell` 宏要按新名字重写
+MBT:RegisterMDFEvent("MultiBossTracker_RefreshClickCast", function()
+    if not (MBT.IsDotClickMode and MBT:IsDotClickMode()) then return end
+    for _, fid in ipairs(FRAME_IDS) do
+        local btn = MBT.BossFrames[fid]
+        if btn and MBT.RebuildDotClickSlots then MBT:RebuildDotClickSlots(btn) end
+    end
+end)
+
+-- DoT 点击模式开关切换：重建所有 boss 框的宏（ClickCast）+ 预渲染槽位（BossFrame）
+-- 出战中无法改 SecureActionButton 属性，DeferIfInCombat 自动等出战
+MBT:RegisterMDFEvent("MultiBossTracker_ClickModeChanged", function()
+    if InCombatLockdown() then
+        if MBT.DeferIfInCombat then
+            MBT:DeferIfInCombat(function() MBT:FireEvent("MultiBossTracker_ClickModeChanged") end)
+        end
+        return
+    end
+    local isDot = MBT.IsDotClickMode and MBT:IsDotClickMode()
+    for _, fid in ipairs(FRAME_IDS) do
+        local btn = MBT.BossFrames[fid]
+        if btn then
+            if isDot then
+                if MBT.RebuildDotClickSlots then MBT:RebuildDotClickSlots(btn) end
+            else
+                if MBT.TearDownDotClickSlots then MBT:TearDownDotClickSlots(btn) end
+            end
+        end
+    end
+    -- boss 框本体宏也要刷：dot-click 模式 → /target only；修饰键模式 → 经典宏
+    if MBT.RefreshAllClickCast and MBT.lastZoneData then
+        MBT.RefreshAllClickCast(MBT.lastZoneData)
+    end
 end)
 
 -- Lock change & anchor reset
@@ -291,6 +333,13 @@ local function refreshForSpecChange()
     end
     -- ApplyCompactToAll → applyStandard/Compact → pipRow Show/Hide + UpdatePipsForBoss
     ApplyCompactToAll()
+    -- DoT 点击模式下 ClearDots 把预渲染灰色图标也清掉了，必须重建
+    if MBT.IsDotClickMode and MBT:IsDotClickMode() then
+        for _, fid in ipairs(FRAME_IDS) do
+            local btn = MBT.BossFrames[fid]
+            if btn and MBT.RebuildDotClickSlots then MBT:RebuildDotClickSlots(btn) end
+        end
+    end
 end
 specFrame:SetScript("OnEvent", function(_, event, unit)
     if event == "PLAYER_SPECIALIZATION_CHANGED" and unit ~= "player" then return end

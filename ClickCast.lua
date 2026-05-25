@@ -101,8 +101,22 @@ MBT.GetBindingMacro = GetBindingMacro
 -- Apply macros to one frame's button using the active class bindings + this frame's boss name.
 local function SetupSecureFrame(btn, bindings, bossName)
     if InCombatLockdown() then return end       -- can't mutate secure attributes in combat
-    if not btn or not bindings then return end
+    if not btn then return end
     btn.bossName = bossName
+
+    -- DoT 点击模式：boss 框本体 5 个鼠标键统一变成 /targetexact <boss>，修饰键全部失效
+    -- DoT 图标的点击由 BossFrame.RebuildDotClickSlots 单独写宏到每个 slot 上
+    if MBT.IsDotClickMode and MBT:IsDotClickMode() then
+        local m = "/targetexact " .. (bossName or "")
+        btn:SetAttribute("*macrotext1", m)
+        btn:SetAttribute("*macrotext2", m)
+        btn:SetAttribute("*macrotext3", m)
+        btn:SetAttribute("*macrotext4", m)
+        btn:SetAttribute("*macrotext5", m)
+        return
+    end
+
+    if not bindings then return end
     local function build(prefix)
         local k = "t" .. prefix .. "Click"
         local s = "tS" .. prefix .. "Click"
@@ -139,11 +153,14 @@ local function RefreshAll(tZoneData)
         return
     end
     local class = MBT.formattedClassData
-    if not class or not class.tCastingModeBindings then return end
+    -- 修饰键模式必须有 bindings；dot-click 模式不依赖 bindings（宏只用 boss 名）
+    local isDotClick = MBT.IsDotClickMode and MBT:IsDotClickMode()
+    if not isDotClick and (not class or not class.tCastingModeBindings) then return end
+    local bindings = class and class.tCastingModeBindings or nil
     for fid, btn in pairs(MBT.BossFrames) do
         local slot = tZoneData and tZoneData[fid]
         if slot and slot.sTarName then
-            SetupSecureFrame(btn, class.tCastingModeBindings, slot.sTarName)
+            SetupSecureFrame(btn, bindings, slot.sTarName)
         end
     end
 end
