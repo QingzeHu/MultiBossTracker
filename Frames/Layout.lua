@@ -2,7 +2,7 @@
 -- the dispatched events into per-frame UI updates.
 local addonName, MBT = ...
 
-local FRAME_IDS = {"A", "B", "C", "D", "E"}
+local FRAME_IDS = MBT.FRAME_IDS
 
 -- 初始化用：容器和首次 frame 放置时用的占位尺寸（实际尺寸由 getRowHeight/getRowGap 决定）
 local INIT_ROW_H = 54
@@ -158,7 +158,15 @@ MBT.ReanchorRows = ReanchorRows
 local function ResizeContainer()
     local rowH = getRowHeight()
     local rowGap = getRowGap()
-    local n = #FRAME_IDS
+    -- 高度按"可见框数"算，但保留 5 行基准：
+    -- - 常规副本 ≤5 个目标 → n=5，容器尺寸与历史版本完全一致，不影响已有锚点/布局。
+    -- - 阵营冠军 >5 个目标 → 容器跟着长高，刚好包住所有可见框。
+    local visible = 0
+    for _, fid in ipairs(FRAME_IDS) do
+        local btn = MBT.BossFrames[fid]
+        if btn and btn:IsShown() then visible = visible + 1 end
+    end
+    local n = math.max(visible, 5)
     local h = n * rowH + (n - 1) * rowGap
     -- 宽度按当前框体实际宽度取最大（每种样式宽度不同）
     local w = 0
@@ -204,12 +212,15 @@ MBT:RegisterMDFEvent("MultiBossTracker_ChangeZone", function(_, zoneName, tZoneD
     MBT.lastZoneData = tZoneData
     if not tZoneData then
         for _, fid in ipairs(FRAME_IDS) do MBT.BossFrames[fid]:Hide() end
+        ResizeContainer()
         return
     end
     for _, fid in ipairs(FRAME_IDS) do
         MBT.ApplyZoneSlot(MBT.BossFrames[fid], tZoneData[fid])
     end
     ReanchorRows()
+    -- 可见框数可能随编码（尤其阵营冠军动态阵容）变化 —— 重算容器高度
+    ResizeContainer()
     -- Tell ClickCast to refresh secure macros for all visible frames now that the boss names changed.
     MBT:FireEvent("MultiBossTracker_RefreshClickCast", tZoneData)
 end)

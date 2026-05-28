@@ -222,9 +222,8 @@ local PHASES = {
                 bosses = {
                     { name = "加拉克苏斯大王", npcID = "34780",
                       adds = {
-                          { name = "虚空传送门", npcID = "34825" },
-                          { name = "地狱火山",   npcID = "34813" },
-                          { name = "痛苦女王",   npcID = "34826" },
+                          { name = "痛苦女王",     npcID = "34826" },
+                          { name = "魔焰地狱火",   npcID = "34815" },
                       } },
                 },
             },

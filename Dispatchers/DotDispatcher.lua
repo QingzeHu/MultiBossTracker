@@ -1,5 +1,5 @@
 -- DoT Dispatcher
--- Watches CLEU and routes the player's DoT events to the right boss frame (A/B/C/D/E)
+-- Watches CLEU and routes the player's DoT events to the right boss frame (A..J)
 -- by NPCID. Broadcasts MultiBossTracker_DoTUpdate {Add|Remove|Refresh|Stack|IncreaseDuration}.
 local addonName, MBT = ...
 
@@ -8,7 +8,7 @@ local tAuraData
 local bActive = false
 local tNPCIdToFrames = {}
 local tFrameToNPCIds = {}
-local tFrameList = {"A", "B", "C", "D", "E"}
+local tFrameList = MBT.FRAME_IDS
 
 local function GetSpellInfos(name)
     return tAuraData and tAuraData.tSpellsInfos[name]

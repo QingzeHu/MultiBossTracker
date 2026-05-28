@@ -1017,6 +1017,21 @@ function MBT:ApplyPortraitMode()
     end
 end
 
+-- 阵营冠军专用：名字前缀 [天赋+职业]，按职业颜色着色。
+-- label 用 sSpec（如"增强萨满"，同职业不同天赋可区分）；颜色用 sClass。
+-- 只有冠军才带 sSpec/sClass，其它 boss 两者皆 nil → 前缀为空字符串，名字显示完全不变。
+local function BuildClassPrefix(label, classToken)
+    if (not label or label == "") and (not classToken or classToken == "") then return "" end
+    if not label or label == "" then
+        label = (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[classToken])
+             or (LOCALIZED_CLASS_NAMES_FEMALE and LOCALIZED_CLASS_NAMES_FEMALE[classToken])
+             or classToken
+    end
+    local color = classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
+    local colorStr = (color and color.colorStr) or "ffffffff"
+    return "|c" .. colorStr .. "[" .. label .. "]|r"
+end
+
 -- Update the frame to reflect new boss data (called on MultiBossTracker_ChangeZone).
 local function ApplyZoneSlot(btn, slotData)
     if not slotData or not slotData.sNPCID then
@@ -1025,12 +1040,14 @@ local function ApplyZoneSlot(btn, slotData)
         if btn.portrait2D then btn.portrait2D:SetTexture("") end
         btn.lastModelGUID = nil
         btn.lastPortraitGUID = nil
+        btn.namePrefix = nil
         ClearDots(btn)
         return
     end
     btn:Show()
     btn.npcID = slotData.sNPCID
     btn.targetName = slotData.sTarName
+    btn.namePrefix = BuildClassPrefix(slotData.sSpec, slotData.sClass)
     -- 清掉之前的 boss 头像；HealthUpdater 找到 unit token 后会喂新数据
     if btn.modelFrame then btn.modelFrame:ClearModel() end
     if btn.portrait2D then btn.portrait2D:SetTexture("") end
@@ -1039,7 +1056,7 @@ local function ApplyZoneSlot(btn, slotData)
     btn.lastPortraitGUID = nil
     -- 切换 boss 时清掉旧高亮，下次 UpdateTargetHighlight 会重新判断
     MBT:HighlightFrame(btn, false)
-    btn.nameText:SetText(slotData.sTarName or "?")
+    btn.nameText:SetText((btn.namePrefix or "") .. (slotData.sTarName or "?"))
     btn.hp:SetValue(100)
     btn.pctText:SetText("100%")
     btn.cast:Hide()
@@ -1058,7 +1075,7 @@ local function UpdateHealthFromUnit(btn, unit)
     btn.hp:SetValue(pct)
     btn.pctText:SetText(("%d%%"):format(pct))
     -- Real name (in case the boss was renamed during fight, e.g. Saurfang)
-    btn.nameText:SetText(UnitName(unit) or btn.targetName or "?")
+    btn.nameText:SetText((btn.namePrefix or "") .. (UnitName(unit) or btn.targetName or "?"))
     if pct <= 0 then
         btn.hp:SetValue(0)
         btn.pctText:SetText("")

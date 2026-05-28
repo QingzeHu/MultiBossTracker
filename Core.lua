@@ -4,6 +4,10 @@
 local addonName, MBT = ...
 _G.MultiBossTracker = MBT
 
+-- 全局唯一的框体槽位列表。最多 10 个 —— 常规 boss 只用到前几个（其余保持隐藏），
+-- 阵营冠军这种随机阵容最多刷 10 个，需要全部槽位。Layout / Dot / Cast dispatcher 共用这一份。
+MBT.FRAME_IDS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
+
 MBT.AceAddon = LibStub("AceAddon-3.0"):NewAddon(addonName, "AceEvent-3.0", "AceTimer-3.0", "AceConsole-3.0")
 
 -- =====================================================================
@@ -341,9 +345,11 @@ function MBT.AceAddon:OnInitialize()
             -- 诊断命令：打印当前区域 + 目标/鼠标指向单位的 NPCID
             local zone, sub = GetZoneText(), GetSubZoneText()
             self:Print(("|cFFFFFF66区域:|r %s  |cFFFFFF66子区域:|r %s"):format(zone, sub))
-            local known = MBT.localizedZones and MBT.localizedZones[sub ~= "" and sub or zone]
-            if known then
-                self:Print("|cFF66FF66该区域已在数据集里。|r")
+            -- 与 GetZoneData 一致：子区域优先，没命中再退回主区域名
+            local lz = MBT.localizedZones
+            local matchedKey = lz and ((sub ~= "" and lz[sub] and sub) or (lz[zone] and zone))
+            if matchedKey then
+                self:Print(("|cFF66FF66该区域已在数据集里（匹配键：%s）。|r"):format(matchedKey))
             else
                 self:Print("|cFFFF6666该区域不在数据集里 —— 这里不会显示框体。|r")
             end

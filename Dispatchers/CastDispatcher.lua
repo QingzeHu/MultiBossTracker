@@ -5,7 +5,7 @@ local addonName, MBT = ...
 
 local bActive = false
 local tNPCIdToFrames, tFrameToNPCIds = {}, {}
-local tFrameList = {"A", "B", "C", "D", "E"}
+local tFrameList = MBT.FRAME_IDS
 
 local function StartCast(frameID, spellID)
     if not spellID then return end
