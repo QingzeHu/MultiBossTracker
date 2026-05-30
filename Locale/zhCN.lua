@@ -58,7 +58,7 @@ MBT:RegisterLocale("zhCN", {
     -- TOC + Onyxia
     ["Trial of the Crusader"] = "十字军的试炼",
     ["Gormok the Impaler"] = "穿刺者戈莫克",
-    ["Snobold Vassal"] = "狗头人奴隶",
+    ["Snobold Vassal"] = "雪地狗头人奴隶",
     ["Acidmaw"] = "酸喉",
     ["Dreadscale"] = "恐鳞",
     ["Icehowl"] = "冰吼",
@@ -206,7 +206,7 @@ MBT:RegisterLocale("zhCN", {
     ["Renataki"]                 = "雷纳塔基",
     ["Wushoolay"]                = "乌苏雷",
     ["High Priest Thekal"]       = "高阶祭司塞卡尔",
-    ["Zealot Lor'Khan"]          = "狂热者罗尔卡恩",
+    ["Zealot Lor'Khan"]          = "狂热者洛卡恩",
     ["Zealot Zath"]              = "狂热者扎斯",
     ["Gahz'ranka"]               = "加兹兰卡",
     ["High Priestess Arlokk"]    = "高阶祭司娅尔罗",
@@ -214,8 +214,6 @@ MBT:RegisterLocale("zhCN", {
     ["Shade of Jin'do"]          = "金度的影像",
     ["Hakkar"]                   = "哈卡",
     ["Son of Hakkar"]            = "哈卡之子",
-    ["Bloodseeker Bat"]          = "嗜血蝙蝠",
-    ["Frenzied Bloodseeker Bat"] = "狂乱的嗜血蝙蝠",
 
     -- T2 (Tempest Keep + Serpentshrine Cavern)
     ["Serpentshrine Cavern"] = "毒蛇神殿",

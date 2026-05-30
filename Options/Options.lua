@@ -211,7 +211,7 @@ local PHASES = {
                 header = "十字军的试炼 - 诺森德猛兽",
                 bosses = {
                     { name = "穿刺者戈莫克",   npcID = "34796",
-                      adds = { { name = "狗头人奴隶", npcID = "34800" } } },
+                      adds = { { name = "雪地狗头人奴隶", npcID = "34800" } } },
                     { name = "酸喉",           npcID = "35144" },
                     { name = "恐鳞",           npcID = "34799" },
                     { name = "冰吼",           npcID = "34797" },
@@ -263,11 +263,7 @@ local PHASES = {
             {
                 header = "祖尔格拉布",
                 bosses = {
-                    { name = "高阶祭司耶克里克", npcID = "14517",
-                      adds = {
-                          { name = "嗜血蝙蝠",         npcID = "11368" },
-                          { name = "狂乱的嗜血蝙蝠",   npcID = "14965" },
-                      } },
+                    { name = "高阶祭司耶克里克", npcID = "14517" },
                     { name = "高阶祭司温诺希斯", npcID = "14507" },
                     { name = "高阶祭司玛尔里",   npcID = "14510" },
                     { name = "血领主曼多基尔",   npcID = "11382",
@@ -277,7 +273,7 @@ local PHASES = {
                       npcIDs = { "15082", "15083", "15084", "15085" } },
                     { name = "高阶祭司塞卡尔",   npcID = "14509",
                       adds = {
-                          { name = "狂热者罗尔卡恩", npcID = "11347" },
+                          { name = "狂热者洛卡恩", npcID = "11347" },
                           { name = "狂热者扎斯",     npcID = "11348" },
                       } },
                     { name = "加兹兰卡",         npcID = "15114" },

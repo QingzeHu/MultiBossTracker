@@ -14,7 +14,7 @@ tZonesData.tZones = {
             iStartingFight = 629,
             [629] = { -- 北裂境野兽群 (戈莫克 → 酸喉/恐鳞 → 冰吼)
                 ["A"] = { sNPCID = "34796", sTarName = "Gormok the Impaler", iIcon = 236697, tEnabledOptions = {"bBeastsFight","bGormok"} },     -- 穿刺者戈莫克
-                ["B"] = { sNPCID = "34800", sTarName = "Snobold Vassal",     iIcon = 134168, tEnabledOptions = {"bBeastsFight","bSnobold"} },    -- 狗头人奴隶 (戈莫克身上跳下来的小怪，紧跟戈莫克后面显示)
+                ["B"] = { sNPCID = "34800", sTarName = "Snobold Vassal",     iIcon = 134168, tEnabledOptions = {"bBeastsFight","bSnobold"} },    -- 雪地狗头人奴隶 (戈莫克身上跳下来的小怪，紧跟戈莫克后面显示)
                 ["C"] = { sNPCID = "35144", sTarName = "Acidmaw",            iIcon = 134437, tEnabledOptions = {"bBeastsFight","bAcidmaw"} },    -- 酸喉
                 ["D"] = { sNPCID = "34799", sTarName = "Dreadscale",         iIcon = 236197, tEnabledOptions = {"bBeastsFight","bDreadscale"} }, -- 恐鳞
                 ["E"] = { sNPCID = "34797", sTarName = "Icehowl",            iIcon = 132189, tEnabledOptions = {"bBeastsFight","bIcehowl"} },    -- 冰吼
@@ -71,9 +71,7 @@ tZonesData.tZones = {
     -- 只有加兹兰卡那片子区域为空（GetSubZoneText 返回 ""），没法按子区域建，留在下面
     -- Zul'Gurub Encounters，靠"区域名兜底 + 名牌/悬浮自动识别"出框。其余 boss 全按子区域建好了。
     ["希里克祭坛"] = { -- 高阶祭司耶克里克 (蝙蝠化身)
-        ["A"] = { sNPCID = "14517", sTarName = "High Priestess Jeklik",    iIcon = 134301 }, -- 高阶祭司耶克里克 (BOSS)
-        ["B"] = { sNPCID = "11368", sTarName = "Bloodseeker Bat",          iIcon = 134437 }, -- 嗜血蝙蝠 (召唤小蝙蝠)
-        ["C"] = { sNPCID = "14965", sTarName = "Frenzied Bloodseeker Bat", iIcon = 134437 }, -- 狂乱的嗜血蝙蝠 (狂暴版小蝙蝠)
+        ["A"] = { sNPCID = "14517", sTarName = "High Priestess Jeklik", iIcon = 134301 }, -- 高阶祭司耶克里克 (BOSS)
     },
     ["毒蛇小径"] = { -- 高阶祭司温诺希斯 (蛇化身)
         ["A"] = { sNPCID = "14507", sTarName = "High Priest Venoxis", iIcon = 134301 }, -- 高阶祭司温诺希斯 (BOSS)
@@ -87,7 +85,7 @@ tZonesData.tZones = {
     },
     ["希瓦拉尔之角"] = { -- 高阶祭司塞卡尔 (老虎化身) + 两个狂热者
         ["A"] = { sNPCID = "14509", sTarName = "High Priest Thekal", iIcon = 134301 }, -- 高阶祭司塞卡尔 (BOSS)
-        ["B"] = { sNPCID = "11347", sTarName = "Zealot Lor'Khan",    iIcon = 132355 }, -- 狂热者罗尔卡恩 (萨满小弟)
+        ["B"] = { sNPCID = "11347", sTarName = "Zealot Lor'Khan",    iIcon = 132355 }, -- 狂热者洛卡恩 (萨满小弟)
         ["C"] = { sNPCID = "11348", sTarName = "Zealot Zath",        iIcon = 132320 }, -- 狂热者扎斯 (盗贼小弟)
     },
     -- 疯狂之缘：同一祭坛每周 RNG 只刷 4 选 1 —— 标记 bDynamicRoster，靠名牌/悬浮检测，只显示实际刷出来的那只。
