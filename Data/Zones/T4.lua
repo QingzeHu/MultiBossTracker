@@ -79,9 +79,9 @@ tZonesData.tZones = {
     ["沙德拉扎尔"] = { -- 高阶祭司玛尔里 (蜘蛛化身)
         ["A"] = { sNPCID = "14510", sTarName = "High Priestess Mar'li", iIcon = 136116 }, -- 高阶祭司玛尔里 (BOSS)
     },
-    ["哈卡莱猎场"] = { -- 血领主曼多基尔 (+ 坐骑奥甘)
+    ["哈卡莱猎场"] = { -- 血领主曼多基尔 (+ 坐骑奥根)
         ["A"] = { sNPCID = "11382", sTarName = "Bloodlord Mandokir", iIcon = 132212 }, -- 血领主曼多基尔 (BOSS，骑迅猛龙)
-        ["B"] = { sNPCID = "14988", sTarName = "Ohgan",              iIcon = 132225 }, -- 奥甘 (曼多基尔的迅猛龙坐骑)
+        ["B"] = { sNPCID = "14988", sTarName = "Ohgan",              iIcon = 132225 }, -- 奥根 (曼多基尔的迅猛龙坐骑)
     },
     ["希瓦拉尔之角"] = { -- 高阶祭司塞卡尔 (老虎化身) + 两个狂热者
         ["A"] = { sNPCID = "14509", sTarName = "High Priest Thekal", iIcon = 134301 }, -- 高阶祭司塞卡尔 (BOSS)

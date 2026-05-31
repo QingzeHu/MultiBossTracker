@@ -200,7 +200,7 @@ MBT:RegisterLocale("zhCN", {
     ["High Priest Venoxis"]      = "高阶祭司温诺希斯",
     ["High Priestess Mar'li"]    = "高阶祭司玛尔里",
     ["Bloodlord Mandokir"]       = "血领主曼多基尔",
-    ["Ohgan"]                    = "奥甘",
+    ["Ohgan"]                    = "奥根",
     ["Gri'lek"]                  = "格里雷克",
     ["Hazza'rah"]                = "哈扎拉尔",
     ["Renataki"]                 = "雷纳塔基",
