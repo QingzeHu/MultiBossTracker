@@ -16,13 +16,14 @@ Thumbs.db
 .claude/
 .cursor/
 .aider*
-CLAUDE.md
 .github/copilot/
 
-# 开发文档（git 跟踪，但 release 打包时排除）
+# 开发文档（本地保留，不入库，release 也排除）
 PRO_PLAN.md
 LISTING.md
 TEXTURE-SOURCES.md
+
+# CLAUDE.md：入库（项目说明，源码一部分），但 release.yml 已排除、不进发布包
 
 # 外部参考源（仅本地保留，从不分发）
 _wa_source/
