@@ -167,6 +167,9 @@ local function CreateBossFrame(frameID, parent)
     markerHolder:SetFrameLevel(btn:GetFrameLevel() + 10)
     local markerIcon = markerHolder:CreateTexture(nil, "OVERLAY")
     markerIcon:SetAllPoints(markerHolder)
+    -- 关键：必须先把团标图集文件挂上。本客户端（5.4.3）的 SetRaidTargetIconTexture
+    -- 只设 TexCoord、不设贴图文件 —— 不预先 SetTexture 的话贴图为空，永远渲染不出来。
+    markerIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
     markerIcon:Hide()
     btn.markerHolder = markerHolder
     btn.markerIcon = markerIcon
@@ -623,13 +626,14 @@ local function applyStandard(btn)
     btn.icon:SetSize(portraitW, portraitH)
     btn.icon:SetPoint("TOPLEFT", btn, "TOPLEFT", portraitX, -b)
 
-    -- 团标：贴在头像左上角，1/4 头像大小，1px 内缩
+    -- 团标：挂在 btn 左外侧 accent（黄竖线）的左边，跟紧凑模式一致 ——
+    -- 不再贴头像左上角，避免被 3D 头像模型挡住看不见。
+    -- accent 占 btn 外 -5..-1（4px 宽 + 1px 缝隙），团标右边贴到 -6 留 1px 间距，竖直居中。
     if btn.markerHolder then
-        local m = math.floor(portraitW * 0.25)
-        if m < 8 then m = 8 end
+        local m = math.min(hpH, 22)
         btn.markerHolder:ClearAllPoints()
         btn.markerHolder:SetSize(m, m)
-        btn.markerHolder:SetPoint("TOPLEFT", btn, "TOPLEFT", portraitX + 1, -(b + 1))
+        btn.markerHolder:SetPoint("RIGHT", btn, "LEFT", -6, 0)
     end
 
     btn.hp:ClearAllPoints()
