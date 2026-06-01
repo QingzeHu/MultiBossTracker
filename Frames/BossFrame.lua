@@ -386,9 +386,14 @@ local function CreateBossFrame(frameID, parent)
         timeText:SetPoint("CENTER", textHolder, "CENTER", 0, 0)
         timeText:SetJustifyH("CENTER")
         timeText:SetTextColor(1, 1, 0.4, 1)
-        -- 应用用户配置的字号
-        local fp, _, ff = timeText:GetFont()
-        timeText:SetFont(fp, MBT.db and MBT.db.profile.iDotTextSize or 14, ff)
+        -- 应用用户配置的字号（0 = 隐藏数字，交给 OmniCC 等插件显示）
+        local dotTextSize = MBT.db and MBT.db.profile.iDotTextSize or 14
+        if dotTextSize > 0 then
+            local fp, _, ff = timeText:GetFont()
+            timeText:SetFont(fp, dotTextSize, ff)
+        else
+            timeText:Hide()
+        end
         f.timeText = timeText
 
         local stacks = textHolder:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
@@ -757,13 +762,19 @@ function MBT:UpdateDotSize()
 end
 
 -- 让所有已创建的 DoT 槽位重新应用配置里的字号（滑动条调整时调用）
+-- 字号 0 = 隐藏自绘数字（交给 OmniCC 等插件显示）；SetFont 不能传 0，所以用 Hide/Show 切换
 function MBT:UpdateDotTextSize()
     local size = (MBT.db and MBT.db.profile.iDotTextSize) or 14
     for _, btn in pairs(MBT.BossFrames or {}) do
         for _, slot in pairs(btn.dotSlots) do
             if slot.timeText then
-                local fp, _, ff = slot.timeText:GetFont()
-                slot.timeText:SetFont(fp, size, ff)
+                if size > 0 then
+                    local fp, _, ff = slot.timeText:GetFont()
+                    slot.timeText:SetFont(fp, size, ff)
+                    slot.timeText:Show()
+                else
+                    slot.timeText:Hide()
+                end
             end
         end
     end

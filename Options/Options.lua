@@ -666,9 +666,9 @@ local function BuildOptionsTable()
                     },
                     iDotTextSize = {
                         order = 15, type = "range", name = "DoT 倒计时字号",
-                        desc = "DoT 图标中央倒计时数字的字符大小",
+                        desc = "DoT 图标中央倒计时数字的字符大小。设为 0 可完全隐藏（适合用 OmniCC 等冷却数字插件显示倒计时的玩家）",
                         width = "full",
-                        min = 8, max = 28, step = 1,
+                        min = 0, max = 28, step = 1,
                         get = function() return MBT.db.profile.iDotTextSize end,
                         set = function(_, v)
                             MBT.db.profile.iDotTextSize = v
