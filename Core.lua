@@ -83,7 +83,7 @@ MBT.defaults = {
         iDotTextSize = 14,               -- DoT 倒计时数字字号
         iDotSize     = 32,               -- DoT 图标边长（仅完整模式；紧凑模式固定，受行高约束）
         bReverseGrowth = false,          -- frames grow downward by default
-        fRowGap = 40,                    -- 完整模式下两行之间的像素间距（紧凑模式总用 6px）
+        fRowGap = 20,                    -- 完整模式下两行之间的像素间距（紧凑模式总用 6px）
         bShowMissingDoTs = true,         -- show DoT slots even when not applied (faded)
         bShowNPCCasts = true,            -- show enemy castbar — 默认开启（boss 读条时自动显示，平时不挡）
         bShowPlayerCast = true,          -- 顶部青色条显示玩家自己的 cast 在哪只 boss 上 —— 多目标切换关键
@@ -91,6 +91,7 @@ MBT.defaults = {
         bShowFacingWarning = true,       -- HP 右上角 "面" 字闪烁提示朝向错误（点击施法返回 facing 错误时）
         bShowRaidMarker = true,          -- 显示团长设置的团标（标准模式：头像左上角；紧凑模式：accent 黄竖线左侧）
         bUse3DPortrait = true,           -- 头像类型：true=3D 模型，false=2D 静态贴图（更省 GPU）
+        bTransparentBG = false,          -- true = boss 框黑底全透明（标准/极简通用），不挡后面的视野
         bHideBrandPips = false,          -- true = 隐藏毁灭术士的余烬/暗影印记 pip 行，boss 框退回原始形态
         bHideChannelBar = false,         -- true = 隐藏痛苦术士的吸取灵魂引导条，boss 框退回原始形态
         fHealthUpdateInterval = 0.1,     -- seconds between raid scans (DPS 输出时血量很关键，默认尽量实时)
@@ -245,6 +246,7 @@ MBT.defaults = {
             ["Vampiric Touch"]      = false,
             ["Curse of Doom"]       = false,
             ["Curse of Agony"]      = false,
+            ["Shadow Mastery"]      = false,
         },
 
         -- Per-tier NPC blacklist (each is a flat table of "bOptionName" -> bool).
@@ -308,6 +310,7 @@ function MBT:OnProfileChanged()
     if MBT.ApplyCompactToAll  then MBT:ApplyCompactToAll() end
     if MBT.ApplyPortraitMode  then MBT:ApplyPortraitMode() end
     if MBT.UpdateDotTextSize  then MBT:UpdateDotTextSize() end
+    if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
     if MBT.ApplyAnchor        then MBT.ApplyAnchor() end
     if MBT.SetLocked          then MBT.SetLocked(MBT.db.profile.bLocked) end
 

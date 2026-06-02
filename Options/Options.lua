@@ -570,6 +570,7 @@ local SPELL_BLACKLIST_BY_CLASS = {
             { sKey = "Shadow Brand",        sLabel = "暗影印记" },
             { sKey = "Shadowburn",          sLabel = "暗影灼烧" },
             { sKey = "Conflagrate",         sLabel = "燃烧" },
+            { sKey = "Shadow Mastery",      sLabel = "暗影掌握" },
         },
     },
     {
@@ -686,6 +687,16 @@ local function BuildOptionsTable()
                             -- 像素模式下 DoT 变化要触发整体 relayout（行高 / 头像 / 总宽都跟着变）
                             if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
                             if MBT.UpdateDotSize then MBT:UpdateDotSize() end
+                        end,
+                    },
+                    bTransparentBG = {
+                        order = 17, type = "toggle", name = "透明模式",
+                        desc = "勾选后只有 DoT 显示区域的黑色底板变透明，不再挡住后面的场景 / 单位；血条和头像保留黑底，观感不变。\n标准和极简样式都生效。",
+                        width = "full",
+                        get = function() return MBT.db.profile.bTransparentBG end,
+                        set = function(_, v)
+                            MBT.db.profile.bTransparentBG = v
+                            if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
                         end,
                     },
 

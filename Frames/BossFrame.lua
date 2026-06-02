@@ -81,11 +81,41 @@ local SOLID = "Interface\\Buttons\\WHITE8X8"
 local HP_COLOR_NORMAL    = { 0.62, 0.00, 0.00, 1 }
 local HP_COLOR_HIGHLIGHT = { 0.90, 0.15, 0.15, 1 }
 
+-- 透明模式下血条区域的分层透明度。血条 = 黑底 + 暗红底 + 红色填充三层叠加，
+-- 必须每层单独调透才有效（只调整帧 alpha 时三层叠加后仍接近不透明，看不出透）：
+--   黑底 / 暗红底 → HP_TRANSPARENT_BG_ALPHA（很透 → 掉血的部分能清楚透出场景）
+--   红色填充 / 文字 → 跟随 hp 整帧 alpha = HP_TRANSPARENT_ALPHA（稍微透一点）
+local HP_TRANSPARENT_ALPHA    = 0.7
+local HP_TRANSPARENT_BG_ALPHA = 0.25
+-- HP 条暗红底色（不透明模式的基准值；透明模式下 alpha 换成 HP_TRANSPARENT_BG_ALPHA）
+local HP_BG_RGBA = { 0.15, 0.05, 0.05, 0.7 }
+
 -- Format remaining time the WoW way
 local function FormatTime(t)
     if t > 60 then return ("%dm"):format(math.floor(t / 60)) end
     if t > 10 then return ("%d"):format(math.floor(t)) end
     return ("%.1f"):format(t)
+end
+
+-- 单个 boss 框应用/取消透明模式。创建末尾和开关切换时共用，保证两条路径状态一致。
+-- 只改贴图 alpha / 显隐，不动尺寸/锚点，战斗中也能安全执行。
+local function ApplyFrameTransparency(btn, transparent)
+    -- 整框黑底：透明模式下完全隐去 → DoT 区域 / 元素缝隙透出场景
+    if btn.bd then btn.bd:SetColorTexture(0, 0, 0, transparent and 0 or 1) end
+    -- 血条三层分别调透：黑底 + 暗红底调到很透（掉血部分透场景），红色填充和文字跟整帧 alpha 稍微透
+    if btn.hpBd then
+        btn.hpBd:SetColorTexture(0, 0, 0, HP_TRANSPARENT_BG_ALPHA)
+        btn.hpBd:SetShown(transparent)
+    end
+    if btn.hpbg then
+        btn.hpbg:SetColorTexture(HP_BG_RGBA[1], HP_BG_RGBA[2], HP_BG_RGBA[3],
+            transparent and HP_TRANSPARENT_BG_ALPHA or HP_BG_RGBA[4])
+    end
+    if btn.hp then btn.hp:SetAlpha(transparent and HP_TRANSPARENT_ALPHA or 1) end
+    -- 头像 / 印记行 / 引导条：透明模式下用各自的实心局部黑底兜底
+    if btn.portraitBd then btn.portraitBd:SetShown(transparent) end
+    if btn.pipRowBd then btn.pipRowBd:SetShown(transparent) end
+    if btn.channelRowBd then btn.channelRowBd:SetShown(transparent) end
 end
 
 -- Build a single boss frame. parent should be MBT.containerFrame.
@@ -123,6 +153,7 @@ local function CreateBossFrame(frameID, parent)
     btn.frameID = frameID
 
     -- 全黑不透明背景。元素内缩 1px 让 bd 黑底从边缘漏出，形成 1px"硬边框"
+    -- 透明模式（bTransparentBG）的处理统一在 ApplyFrameTransparency（CreateBossFrame 末尾调用）
     local bd = btn:CreateTexture(nil, "BACKGROUND")
     bd:SetAllPoints(btn)
     bd:SetColorTexture(0, 0, 0, 1)
@@ -158,6 +189,15 @@ local function CreateBossFrame(frameID, parent)
     portrait2D:Hide()
     btn.portrait2D = portrait2D
 
+    -- 透明模式下头像区域的局部黑底（外扩 1px 保留"硬边框"观感）。
+    -- 挂在 portraitFrame 下 → 紧凑模式 icon:Hide() 时自动跟着隐藏，不会在没头像的位置留黑块
+    local portraitBd = portraitFrame:CreateTexture(nil, "BACKGROUND", nil, -1)
+    portraitBd:SetPoint("TOPLEFT", portraitFrame, "TOPLEFT", -1, 1)
+    portraitBd:SetPoint("BOTTOMRIGHT", portraitFrame, "BOTTOMRIGHT", 1, -1)
+    portraitBd:SetColorTexture(0, 0, 0, 1)
+    portraitBd:Hide()
+    btn.portraitBd = portraitBd
+
     -- 团标（团长设置的星星/圈圈/菱形等）
     -- holder 直接挂 btn 上、frame level 抬到所有元素之上（盖在 3D 模型 / glow 之上都行）
     -- 位置 + 尺寸由 applyStandard / applyCompact 各自重置：
@@ -185,10 +225,19 @@ local function CreateBossFrame(frameID, parent)
     hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
     hp:SetMinMaxValues(0, 100)
     hp:SetValue(100)
-    -- HP bar background
+    -- HP bar background（透明模式下 alpha 由 ApplyFrameTransparency 调低）
     local hpbg = hp:CreateTexture(nil, "BACKGROUND")
     hpbg:SetAllPoints(hp)
-    hpbg:SetColorTexture(0.15, 0.05, 0.05, 0.7)
+    hpbg:SetColorTexture(unpack(HP_BG_RGBA))
+    btn.hpbg = hpbg
+    -- 透明模式下 HP 条的局部底板（外扩 1px 保留"硬边框"轮廓）
+    -- 锚到 hp 自身 → applyCompact/applyStandard 移动血条时自动跟随，不用单独维护
+    local hpBd = hp:CreateTexture(nil, "BACKGROUND", nil, -1)
+    hpBd:SetPoint("TOPLEFT", hp, "TOPLEFT", -1, 1)
+    hpBd:SetPoint("BOTTOMRIGHT", hp, "BOTTOMRIGHT", 1, -1)
+    hpBd:SetColorTexture(0, 0, 0, 1)
+    hpBd:Hide()
+    btn.hpBd = hpBd
     btn.hp = hp
 
     -- HP bar text overlay: name (left) + percent (right) + raid marker prefix
@@ -264,6 +313,14 @@ local function CreateBossFrame(frameID, parent)
     btn.pipRow = pipRow
     pipRow.pips = {}
 
+    -- 透明模式下印记 pip 行的局部黑底（外扩 1px）。挂在 pipRow 下 → 行隐藏时自动跟着隐藏
+    local pipRowBd = pipRow:CreateTexture(nil, "BACKGROUND", nil, -1)
+    pipRowBd:SetPoint("TOPLEFT", pipRow, "TOPLEFT", -1, 1)
+    pipRowBd:SetPoint("BOTTOMRIGHT", pipRow, "BOTTOMRIGHT", 1, -1)
+    pipRowBd:SetColorTexture(0, 0, 0, 1)
+    pipRowBd:Hide()
+    btn.pipRowBd = pipRowBd
+
     local function makePipText(xOffset, r, g, b)
         local t = pipRow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         t:SetPoint("LEFT", pipRow, "LEFT", xOffset, 0)
@@ -300,6 +357,14 @@ local function CreateBossFrame(frameID, parent)
     local channelRow = CreateFrame("Frame", nil, btn)
     channelRow:Hide()
     btn.channelRow = channelRow
+
+    -- 透明模式下吸取灵魂引导条的局部黑底（外扩 1px）。同 pipRowBd，跟随行显隐
+    local channelRowBd = channelRow:CreateTexture(nil, "BACKGROUND", nil, -1)
+    channelRowBd:SetPoint("TOPLEFT", channelRow, "TOPLEFT", -1, 1)
+    channelRowBd:SetPoint("BOTTOMRIGHT", channelRow, "BOTTOMRIGHT", 1, -1)
+    channelRowBd:SetColorTexture(0, 0, 0, 1)
+    channelRowBd:Hide()
+    btn.channelRowBd = channelRowBd
 
     -- bar：TOP/BOTTOM 永远贴 channelRow 顶底；LEFT/RIGHT 在 layout 时设（紧凑全宽 / 标准让出标签宽度）
     local bar = CreateFrame("StatusBar", nil, channelRow)
@@ -409,6 +474,10 @@ local function CreateBossFrame(frameID, parent)
         return f
     end
     btn.CreateDotSlot = CreateDotSlot
+
+    -- 透明模式初始状态。注：插件加载阶段 MBT.db 还是 nil（读到 false = 不透明），
+    -- 真实配置由 Layout 的 STATUS handler 调 MBT:ApplyBackgroundOpacity() 补应用
+    ApplyFrameTransparency(btn, (MBT.db and MBT.db.profile.bTransparentBG) and true or false)
 
     -- The whole UI gets hidden when there's no boss for this slot.
     btn:Hide()
@@ -758,6 +827,15 @@ function MBT:UpdateDotSize()
             slot:SetSize(size, size)
         end
         if MBT.LayoutDotRow then MBT.LayoutDotRow(btn) end
+    end
+end
+
+-- 透明模式开关切换 / 插件初始化（STATUS）/ profile 切换时调用：
+-- 所有现存 boss 框立刻按配置应用透明状态。逐帧逻辑见 ApplyFrameTransparency。
+function MBT:ApplyBackgroundOpacity()
+    local transparent = (MBT.db and MBT.db.profile.bTransparentBG) and true or false
+    for _, btn in pairs(MBT.BossFrames or {}) do
+        ApplyFrameTransparency(btn, transparent)
     end
 end
 

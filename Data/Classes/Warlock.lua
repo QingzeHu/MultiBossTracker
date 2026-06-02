@@ -17,6 +17,7 @@ tAuraData.tDotOrderIndices = {
     [11] = "Shadow Brand",
     [12] = "Shadowburn",
     [13] = "Conflagrate",
+    [14] = "Shadow Mastery",
 }
 
 tAuraData.tDotAuras = {
@@ -49,6 +50,8 @@ tAuraData.tDotAuras = {
     [1295140] = "Shadow Brand",
     [29341]   = "Shadowburn",
     [17962]   = "Conflagrate",
+    -- 暗影掌握：暗影箭命中后给目标挂的 debuff（WotLK 强化暗影箭效果）
+    [17800]   = "Shadow Mastery",
 }
 
 tAuraData.tDamageTriggers = {
@@ -146,6 +149,11 @@ tAuraData.tSpellsInfos = {
     ["Conflagrate"] = {
         iDuration = 10, sName = "Conflagrate", iIcon = 135807,
         iColorR = 0.950, iColorG = 0.450, iColorB = 0.150,
+    },
+    ["Shadow Mastery"] = {
+        -- WotLK 强化暗影箭 debuff（30 秒）；实际剩余时间优先从 UnitDebuff 读取，这里只是兜底
+        iDuration = 30, sName = "Shadow Mastery", iIcon = 136197,
+        iColorR = 0.550, iColorG = 0.200, iColorB = 0.850,
     },
 }
 

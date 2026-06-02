@@ -198,6 +198,8 @@ MBT:RegisterMDFEvent("STATUS", function()
     ApplyAnchor()
     ApplyCompactToAll()
     if MBT.ApplyPortraitMode then MBT:ApplyPortraitMode() end
+    -- 透明模式：框体创建时 db 还没就绪（读到的永远是默认不透明），这里按真实配置补应用一次
+    if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
     -- 拖动条按 db 里的锁定状态显示/隐藏
     if MBT.db.profile.bLocked then container.dragBar:Hide() else container.dragBar:Show() end
 end)
