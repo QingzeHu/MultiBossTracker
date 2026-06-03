@@ -77,6 +77,10 @@ end
 -- AceDB defaults.
 -- =====================================================================
 MBT.defaults = {
+    -- 账号级（不随 profile 切换）
+    global = {
+        iLastUpdateWarning = 0,  -- 上次弹"有新版本"提示的时间戳（VersionCheck.lua 用，20 小时节流）
+    },
     profile = {
         -- Layout / general
         iSkin = 2,                       -- 1=极简（单行）2=标准（双行带头像）

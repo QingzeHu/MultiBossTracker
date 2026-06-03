@@ -102,13 +102,23 @@ dragBar:SetScript("OnDragStop", function()
 end)
 
 -- 创建时先隐藏，避免插件加载到 STATUS 事件之间那一帧的视觉闪烁
--- STATUS handler 会按 db.bLocked 重设：默认 bLocked = false → 拖动条 Show，可拖动
+-- STATUS handler 会按 db.bLocked + 区域数据重设
 dragBar:Hide()
 container.dragBar = dragBar
 
+-- 拖动条显隐 = 未锁定 且 当前区域有 boss 数据。
+-- 跟随框体的区域显隐，免得走出副本/假人区后孤零零悬着一个标题条。
+local function UpdateDragBarVisibility()
+    if not MBT.db.profile.bLocked and MBT.lastZoneData then
+        dragBar:Show()
+    else
+        dragBar:Hide()
+    end
+end
+
 local function SetLocked(locked)
     MBT.db.profile.bLocked = locked
-    if locked then dragBar:Hide() else dragBar:Show() end
+    UpdateDragBarVisibility()
 end
 MBT.SetLocked = SetLocked
 
@@ -200,8 +210,8 @@ MBT:RegisterMDFEvent("STATUS", function()
     if MBT.ApplyPortraitMode then MBT:ApplyPortraitMode() end
     -- 透明模式：框体创建时 db 还没就绪（读到的永远是默认不透明），这里按真实配置补应用一次
     if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
-    -- 拖动条按 db 里的锁定状态显示/隐藏
-    if MBT.db.profile.bLocked then container.dragBar:Hide() else container.dragBar:Show() end
+    -- 拖动条按 锁定状态 + 当前区域是否有数据 显示/隐藏
+    UpdateDragBarVisibility()
 end)
 
 -- ---------------------------------------------------------------------
@@ -212,6 +222,8 @@ MBT:RegisterMDFEvent("MultiBossTracker_ChangeZone", function(_, zoneName, tZoneD
     -- tZoneData is a table { ["A"]={...}, ["B"]={...}, ... } or nil for "no zone match".
     -- Cache for click-cast refresh on later binding changes.
     MBT.lastZoneData = tZoneData
+    -- 拖动条跟随区域显隐：进入有数据的区域才显示（且未锁定），离开就跟框体一起隐藏
+    UpdateDragBarVisibility()
     if not tZoneData then
         for _, fid in ipairs(FRAME_IDS) do MBT.BossFrames[fid]:Hide() end
         ResizeContainer()
