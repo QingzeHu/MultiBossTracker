@@ -16,7 +16,6 @@ local GetMetadata    = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadat
 local INSTANCE_CAT   = LE_PARTY_CATEGORY_INSTANCE or 2
 
 local COMM_PREFIX      = "MBTVersion"   -- 插件消息前缀（上限 16 字符，需注册否则服务器丢弃）
-local DOWNLOAD_URL     = "https://github.com/QingzeHu/MultiBossTracker/releases"
 local WARNING_COOLDOWN = 72000          -- 提示节流：20 小时（秒），与 Details 一致
 
 -- ===== 版本号解析 =====
@@ -64,8 +63,8 @@ local function OnVersionReceived(sTheirVersion)
         g.iLastUpdateWarning = time()
     end
 
-    print(("|cFF66CCFF多目标 Boss 追踪|r 有新版本 |cFF66FF66v%s|r 可用（你当前是 v%s），可前往 |cFFFFD200%s|r 下载。")
-        :format(sTheirVersion, MY_VERSION_STR, DOWNLOAD_URL))
+    print(("|cFF66CCFF多目标 Boss 追踪|r 有新版本 |cFF66FF66v%s|r 可用（你当前是 v%s），请从|cFFFFD200新手盒子|r或|cFFFFD200网易DD|r更新。")
+        :format(sTheirVersion, MY_VERSION_STR))
 end
 
 -- ===== 事件接线 =====
