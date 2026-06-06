@@ -267,6 +267,16 @@ MBT:RegisterMDFEvent("MultiBossTracker_UpdateHealth", function(_, npcID, unit)
     end
 end)
 
+-- 单位死亡：把对应 NPCID 的所有可见框体清干净（团标 / 印记层数 / DoT / 血条）
+MBT:RegisterMDFEvent("MultiBossTracker_UnitDied", function(_, npcID)
+    for _, fid in ipairs(FRAME_IDS) do
+        local btn = MBT.BossFrames[fid]
+        if btn and btn:IsShown() and btn.npcID == npcID then
+            MBT.ClearBossCombat(btn)
+        end
+    end
+end)
+
 MBT:RegisterMDFEvent("MultiBossTracker_DoTUpdate", function(_, sub, frameID, pkg)
     local btn = MBT.BossFrames[frameID]
     if not btn or not btn:IsShown() then return end

@@ -95,6 +95,7 @@ MBT.defaults = {
         bShowRangeIndicator = true,      -- HP 右上角 "外" 字提示 boss 不在你最远技能射程内
         bShowFacingWarning = true,       -- HP 右上角 "面" 字闪烁提示朝向错误（点击施法返回 facing 错误时）
         bShowRaidMarker = true,          -- 显示团长设置的团标（标准模式：头像左上角；紧凑模式：accent 黄竖线左侧）
+        iTargetHighlight = 1,            -- 选中高亮样式：1=左侧黄竖线（默认），2=整框一圈蓝色柔光描边（类 Plater 选中高亮）
         bUse3DPortrait = true,           -- 头像类型：true=3D 模型，false=2D 静态贴图（更省 GPU）
         bTransparentBG = false,          -- true = boss 框黑底全透明（标准/极简通用），不挡后面的视野
         bHideBrandPips = false,          -- true = 隐藏毁灭术士的余烬/暗影印记 pip 行，boss 框退回原始形态

@@ -223,13 +223,30 @@ local function SetNPCIDToFrames(tZoneData)
     return any
 end
 
+-- 单位死亡：清掉对应 boss 框的战斗残留（团标残影 / 印记层数 / DoT）。
+-- 注意死亡的 sourceGUID 是击杀者、不一定是玩家，所以不能走 HandleCLEU（那里按玩家过滤会漏掉）。
+-- 只认我们正在追踪的 NPCID；交给 BossFrame 侧 ClearBossCombat 实际清理。
+local function HandleDeath(args)
+    if not bActive then return end
+    local sub = args[2]
+    if sub ~= "UNIT_DIED" and sub ~= "UNIT_DESTROYED" and sub ~= "UNIT_DISSIPATES" then return end
+    local destGUID = args[8]
+    if not destGUID then return end
+    local npcID = select(6, strsplit("-", destGUID))
+    if npcID and tNPCIdToFrames[npcID] then
+        MBT:FireEvent("MultiBossTracker_UnitDied", npcID)
+    end
+end
+
 -- Real WoW events
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:SetScript("OnEvent", function(_, event)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        HandleCLEU({ CombatLogGetCurrentEventInfo() })
+        local args = { CombatLogGetCurrentEventInfo() }
+        HandleCLEU(args)
+        HandleDeath(args)
     end
 end)
 

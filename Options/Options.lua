@@ -620,7 +620,7 @@ local function BuildOptionsTable()
                     -- ===== 外观 =====
                     hAppearance = { order = 10, type = "header", name = "外观" },
                     iSkin = {
-                        order = 11, type = "select", name = "样式",
+                        order = 11, type = "select", name = "样式", width = 0.5,
                         desc = "极简：单条窄血条 + 右侧 DoT，没有大图标和独立施法条，省屏幕\n标准：左侧头像 + HP + 施法条 overlay + 下方 DoT 行\n\n（切换样式后，下方与之无关的选项会自动隐藏 / 显示）",
                         values = { [1] = "极简", [2] = "标准" },
                         get = function() return MBT.db.profile.iSkin end,
@@ -628,6 +628,17 @@ local function BuildOptionsTable()
                             MBT.db.profile.iSkin = v
                             if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
                             AceConfigRegistry:NotifyChange("MultiBossTracker")
+                        end,
+                    },
+                    iTargetHighlight = {
+                        order = 11.1, type = "select", name = "选中高亮", width = 0.5,
+                        desc = "当前目标所在 boss 框的高亮方式：\n黄竖线：框体左侧一道黄色竖线（默认）\n蓝色光晕：框体外缘一圈蓝色光晕，更醒目",
+                        values = { [1] = "黄竖线", [2] = "蓝色光晕" },
+                        get = function() return MBT.db.profile.iTargetHighlight end,
+                        set = function(_, v)
+                            MBT.db.profile.iTargetHighlight = v
+                            -- 立即按新样式刷新当前高亮（藏掉旧样式、显示新样式）
+                            if MBT.UpdateTargetHighlight then MBT:UpdateTargetHighlight() end
                         end,
                     },
                     bReverseGrowth = {

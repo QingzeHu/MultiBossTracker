@@ -85,6 +85,18 @@ local SOLID = "Interface\\Buttons\\WHITE8X8"
 local HP_COLOR_NORMAL    = { 0.62, 0.00, 0.00, 1 }
 local HP_COLOR_HIGHLIGHT = { 0.90, 0.15, 0.15, 1 }
 
+-- 阵营冠军专用：用职业颜色当血条色（替代默认红）。
+-- 取暴雪标准职业色（法师浅蓝 / 萨满深蓝 / 术士紫 …），highlight 朝白色提亮 30% 保留"当前 target 更亮"反馈。
+-- 返回 normal, highlight 两组 RGBA；classToken 无对应色时返回 nil（调用方回退默认红）。
+local function ClassBarColors(classToken)
+    local c = classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
+    if not c then return nil end
+    local r, g, b = c.r, c.g, c.b
+    local normal    = { r, g, b, 1 }
+    local highlight = { r + (1 - r) * 0.3, g + (1 - g) * 0.3, b + (1 - b) * 0.3, 1 }
+    return normal, highlight
+end
+
 -- 透明模式下血条区域的分层透明度。血条 = 黑底 + 暗红底 + 红色填充三层叠加，
 -- 必须每层单独调透才有效（只调整帧 alpha 时三层叠加后仍接近不透明，看不出透）：
 --   黑底 / 暗红底 → HP_TRANSPARENT_BG_ALPHA（很透 → 掉血的部分能清楚透出场景）
@@ -172,6 +184,55 @@ local function CreateBossFrame(frameID, parent)
     accent:SetColorTexture(1.0, 0.85, 0.30, 1)
     accent:Hide()
     btn.accent = accent
+
+    -- 当前 target 高亮的可选样式：沿整个 boss 框（头像 + 血条 + DoT）外缘一圈蓝色柔光，
+    -- 类似 Plater 姓名条选中高亮。用「九宫格」把一张柔光描边贴图切成 4 角 + 4 边：
+    --   · 4 个角用固定尺寸、各自取贴图对应角 → 圆角不被拉伸变形；
+    --   · 4 条边只沿长度方向拉伸（厚度恒定）→ 不受框体宽高比影响；
+    --   · 贴图自带的柔和衰减让 角↔边 接缝无痕 → 是连续自然的一圈，而非 4 条边硬交叉。
+    -- 默认隐藏；与黄竖线 accent 二选一，由 iTargetHighlight + HighlightFrame 控制显隐。
+    local GLOW_W = 14                              -- 光晕厚度（向框外延伸 + 角块边长）
+    local GLOW_LAYERS = 3                          -- 同位置叠几层：ADD 叠加把贴图半透明的部分补实 → 越大越实心、越不透明
+    local GTEX = "Interface\\Buttons\\UI-ActionButton-Border"   -- 柔和方形描边发光贴图
+    local gColor = { 0.00, 0.22, 1.00, 1.0 }       -- 更饱和的纯蓝（R/G 压到接近 0，B 拉满 = 蓝更纯不发白）
+    local C = 0.40                                 -- 九宫格在贴图上的切分点：角占外侧 0.4，中间 0.2 给边
+    local targetGlow = CreateFrame("Frame", nil, btn)
+    targetGlow:SetAllPoints(btn)
+    -- texCoord: (uL,uR,vT,vB)；4 角/4 边全部直接锚到 btn（不互相依赖），方便整圈叠多层
+    local function mkGlowPiece(uL, uR, vT, vB)
+        local t = targetGlow:CreateTexture(nil, "OVERLAY")
+        t:SetTexture(GTEX)
+        t:SetBlendMode("ADD")
+        t:SetVertexColor(gColor[1], gColor[2], gColor[3], gColor[4])
+        t:SetTexCoord(uL, uR, vT, vB)
+        return t
+    end
+    for _ = 1, GLOW_LAYERS do
+        -- 4 角（固定 GLOW_W×GLOW_W，贴在框四角的正外侧）
+        local cTL = mkGlowPiece(0, C, 0, C)
+        cTL:SetPoint("BOTTOMRIGHT", btn, "TOPLEFT", 0, 0);  cTL:SetSize(GLOW_W, GLOW_W)
+        local cTR = mkGlowPiece(1 - C, 1, 0, C)
+        cTR:SetPoint("BOTTOMLEFT", btn, "TOPRIGHT", 0, 0);  cTR:SetSize(GLOW_W, GLOW_W)
+        local cBL = mkGlowPiece(0, C, 1 - C, 1)
+        cBL:SetPoint("TOPRIGHT", btn, "BOTTOMLEFT", 0, 0);  cBL:SetSize(GLOW_W, GLOW_W)
+        local cBR = mkGlowPiece(1 - C, 1, 1 - C, 1)
+        cBR:SetPoint("TOPLEFT", btn, "BOTTOMRIGHT", 0, 0);  cBR:SetSize(GLOW_W, GLOW_W)
+        -- 4 边（沿框边铺满，只沿长度拉伸；角的部分由上面的角块补上）
+        local eTop = mkGlowPiece(C, 1 - C, 0, C)
+        eTop:SetPoint("BOTTOMLEFT",  btn, "TOPLEFT",  0, 0)
+        eTop:SetPoint("BOTTOMRIGHT", btn, "TOPRIGHT", 0, 0);  eTop:SetHeight(GLOW_W)
+        local eBottom = mkGlowPiece(C, 1 - C, 1 - C, 1)
+        eBottom:SetPoint("TOPLEFT",  btn, "BOTTOMLEFT",  0, 0)
+        eBottom:SetPoint("TOPRIGHT", btn, "BOTTOMRIGHT", 0, 0);  eBottom:SetHeight(GLOW_W)
+        local eLeft = mkGlowPiece(0, C, C, 1 - C)
+        eLeft:SetPoint("TOPRIGHT",    btn, "TOPLEFT",    0, 0)
+        eLeft:SetPoint("BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0);  eLeft:SetWidth(GLOW_W)
+        local eRight = mkGlowPiece(1 - C, 1, C, 1 - C)
+        eRight:SetPoint("TOPLEFT",    btn, "TOPRIGHT",    0, 0)
+        eRight:SetPoint("BOTTOMLEFT", btn, "BOTTOMRIGHT", 0, 0);  eRight:SetWidth(GLOW_W)
+    end
+    targetGlow:Hide()
+    btn.targetGlow = targetGlow
 
     -- Boss 头像区域：内含两个子组件，3D 模型 / 2D 贴图各一份，按用户设置 Show/Hide。
     -- compact 模式只 Hide 这个父 frame 即可，不用关心里面是哪种。
@@ -627,7 +688,7 @@ local function applyCompact(btn)
     btn.hp:ClearAllPoints()
     btn.hp:SetSize(COMPACT_HP_WIDTH, hpH)
     btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", b, -b)
-    btn.hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+    btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
 
     btn.dotRow:ClearAllPoints()
     btn.dotRow:SetSize(da, hpH)
@@ -717,7 +778,7 @@ local function applyStandard(btn)
     btn.hp:ClearAllPoints()
     btn.hp:SetSize(hpW, hpH)
     btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", hpX, -b)
-    btn.hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+    btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
 
     btn.cast:ClearAllPoints()
     btn.cast:SetSize(hpW, STANDARD_CAST_HEIGHT)
@@ -800,6 +861,12 @@ local function ClearDots(btn)
         f:Hide()
         f.iOrder = nil
         f.cd:Clear()
+        -- 关键：层数 / 到期 / 数字文本一并归零，否则会残留到下一场战斗
+        -- （pip 行 / combo glow 读的是 stackCount，且对隐藏 slot 也照读 —— 见 readStacks）
+        f.stackCount = 0
+        f.expirationTime = nil
+        if f.stacks then f.stacks:SetText("") end
+        if f.timeText then f.timeText:SetText("") end
     end
 end
 MBT.ClearDots = ClearDots
@@ -1077,15 +1144,39 @@ local function ApplyDotStack(btn, pkg)
 end
 MBT.ApplyDotStack = ApplyDotStack
 
+-- 单位死亡时清掉所有"战斗中"的瞬时状态：DoT 图标 + 层数、pip 行、combo 高亮、团标、施法条，血条压 0。
+-- 否则 boss / 小怪死后这些会卡住：团标残影会和团长新标记叠成两个；术士印记层数会一直保留、串到下一场战斗。
+local function ClearBossCombat(btn)
+    if not btn then return end
+    ClearDots(btn)               -- DoT 图标 + 层数（stackCount）全部归零
+    UpdatePipsForBoss(btn)       -- pip 行按归零后的层数重画（回到 0/N 全暗）
+    UpdateBossComboGlow(btn)     -- 层数已清零 → 把还亮着的 combo glow 关掉
+    if btn.markerIcon then btn.markerIcon:Hide() end
+    if btn.hp then btn.hp:SetValue(0) end
+    if btn.pctText then btn.pctText:SetText("") end
+    if btn.cast then btn.cast:Hide(); btn.cast:SetScript("OnUpdate", nil) end
+end
+MBT.ClearBossCombat = ClearBossCombat
+
 -- 把某个 boss 框体设为"当前 target"高亮（血条变亮 + 左侧金色竖条）
 function MBT:HighlightFrame(btn, on)
     if not btn then return end
+    local useGlow = MBT.db and MBT.db.profile and MBT.db.profile.iTargetHighlight == 2
     if on then
-        btn.hp:SetStatusBarColor(unpack(HP_COLOR_HIGHLIGHT))
-        if btn.accent then btn.accent:Show() end
+        btn.hp:SetStatusBarColor(unpack(btn.hpColorHighlight or HP_COLOR_HIGHLIGHT))
+        if useGlow then
+            -- 蓝色光晕样式：显示光晕、藏掉黄竖线
+            if btn.accent then btn.accent:Hide() end
+            if btn.targetGlow then btn.targetGlow:Show() end
+        else
+            -- 默认黄竖线样式
+            if btn.targetGlow then btn.targetGlow:Hide() end
+            if btn.accent then btn.accent:Show() end
+        end
     else
-        btn.hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+        btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
         if btn.accent then btn.accent:Hide() end
+        if btn.targetGlow then btn.targetGlow:Hide() end
     end
 end
 
@@ -1114,8 +1205,9 @@ function MBT:ApplyPortraitMode()
     end
 end
 
--- 阵营冠军专用：名字前缀 [天赋+职业]，按职业颜色着色。
--- label 用 sSpec（如"增强萨满"，同职业不同天赋可区分）；颜色用 sClass。
+-- 阵营冠军专用：名字前缀 [天赋+职业]。
+-- label 用 sSpec（如"增强萨满"，同职业不同天赋可区分）。
+-- 前缀不再单独着色 —— 跟随 boss 名字字体色（白），职业区分改由血条颜色承载（见 ClassBarColors）。
 -- 只有冠军才带 sSpec/sClass，其它 boss 两者皆 nil → 前缀为空字符串，名字显示完全不变。
 local function BuildClassPrefix(label, classToken)
     if (not label or label == "") and (not classToken or classToken == "") then return "" end
@@ -1124,9 +1216,7 @@ local function BuildClassPrefix(label, classToken)
              or (LOCALIZED_CLASS_NAMES_FEMALE and LOCALIZED_CLASS_NAMES_FEMALE[classToken])
              or classToken
     end
-    local color = classToken and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
-    local colorStr = (color and color.colorStr) or "ffffffff"
-    return "|c" .. colorStr .. "[" .. label .. "]|r"
+    return "[" .. label .. "]"
 end
 
 -- Update the frame to reflect new boss data (called on MultiBossTracker_ChangeZone).
@@ -1138,6 +1228,8 @@ local function ApplyZoneSlot(btn, slotData)
         btn.lastModelGUID = nil
         btn.lastPortraitGUID = nil
         btn.namePrefix = nil
+        btn.hpColorNormal = nil
+        btn.hpColorHighlight = nil
         ClearDots(btn)
         return
     end
@@ -1145,6 +1237,8 @@ local function ApplyZoneSlot(btn, slotData)
     btn.npcID = slotData.sNPCID
     btn.targetName = slotData.sTarName
     btn.namePrefix = BuildClassPrefix(slotData.sSpec, slotData.sClass)
+    -- 阵营冠军：血条改用职业色（其它 boss 无 sClass → nil → HighlightFrame 回退默认红）
+    btn.hpColorNormal, btn.hpColorHighlight = ClassBarColors(slotData.sClass)
     -- 清掉之前的 boss 头像；HealthUpdater 找到 unit token 后会喂新数据
     if btn.modelFrame then btn.modelFrame:ClearModel() end
     if btn.portrait2D then btn.portrait2D:SetTexture("") end
