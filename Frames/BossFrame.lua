@@ -16,10 +16,12 @@ local MAX_DOT_SLOTS = 8
 
 -- 像素风格尺寸（唯一样式）
 -- 极简（单行）：行高 = DoT + 2px 边，HP 高 = DoT，HP 宽 160，DoT 7 个 + 6 个 2px gap
--- 标准（双行）：行高 = 1 + HP + 1 + DoT + 1，头像方块 = 行高 - 2，HP 高 = max(30, DoT)
+-- 标准（双行）：行高固定 = STANDARD_TOTAL_H(65)，头像方块 = 行高 - 2，HP 高 = 总高 - 3边 - DoT（DoT 越大 HP 越矮）
 local COMPACT_HP_WIDTH   = 160
 local STANDARD_HP_WIDTH  = 200
-local STANDARD_HP_HEIGHT_MIN = 30
+-- 标准模式：HP+DoT+3 边 的固定总高。DoT 改变只在内部 HP / DoT 之间重分配，整框高度恒定。
+local STANDARD_TOTAL_H   = 65          -- 3 边(3) + HP + DoT。DoT=32 → HP=30（历史默认）；DoT=48 → HP=14
+local HP_TEXT_MIN        = 14          -- HP 高度下限 = 血条字（GameFontNormalSmall）能显示的最小高度，也即 DoT 上限对应点
 local STANDARD_CAST_HEIGHT = 10        -- overlay 在 HP 底
 local DOT_GAP            = 2
 local BORDER_PX          = 1            -- 元素内缩量 = bd 黑底漏出形成"1px 硬边框"
@@ -60,8 +62,10 @@ local function dotArea(d) return d * 7 + DOT_GAP * 6 end
 
 -- 标准模式 HP 宽度：默认 200 / DoT 行更宽时跟着涨（保持视觉对齐）
 local function standardContentW(d) return math.max(STANDARD_HP_WIDTH, dotArea(d)) end
--- 标准模式 HP 高度：默认 30 / DoT 更大时 HP 跟着涨保持比例
-local function standardHpHeight(d) return math.max(STANDARD_HP_HEIGHT_MIN, d) end
+-- 标准模式 HP 高度：固定总高里减掉 DoT 和 3 条边，剩下的给 HP。
+-- DoT 越大 → HP 越矮（向下挤压血条），直到 HP 触到字高下限 HP_TEXT_MIN（此时 DoT 达上限 48）。
+-- 整框总高 = 3b + hpH + d = STANDARD_TOTAL_H 恒定，头像 = 总高 - 2b 恒定，所以 DoT 不再撑大整框。
+local function standardHpHeight(d) return math.max(HP_TEXT_MIN, STANDARD_TOTAL_H - BORDER_PX * 3 - d) end
 
 -- 给整个容器用的总宽度
 local function totalWidth(compact)
@@ -683,8 +687,8 @@ local function applyStandard(btn)
     local b = BORDER_PX
     local d = getDotSize()
     local pipH = pipExtraH()                          -- 0（无配置）/ PIP_H + PIP_INSET_Y
-    local hpH = standardHpHeight(d)                   -- HP 高度 = max(30, DoT)
-    local rowH = b + hpH + b + d + b + pipH           -- 1 + HP + 1 + DoT + 1 (+ pip + 1)
+    local hpH = standardHpHeight(d)                   -- HP 高度 = 总高 - 3边 - DoT（被 DoT 向下挤压）
+    local rowH = b + hpH + b + d + b + pipH           -- = STANDARD_TOTAL_H (+ pip)，恒定不随 DoT 变
     local portraitH = b + hpH + d                     -- 头像盖 HP+DoT 区域（= rowH - 2b - pipH，pip 在头像下方占整行宽）
     local portraitW = portraitH                       -- 正方形
     local portraitX = b

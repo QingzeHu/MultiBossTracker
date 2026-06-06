@@ -86,6 +86,7 @@ MBT.defaults = {
         iSkin = 2,                       -- 1=极简（单行）2=标准（双行带头像）
         iDotTextSize = 14,               -- DoT 倒计时数字字号
         iDotSize     = 32,               -- DoT 图标边长（仅完整模式；紧凑模式固定，受行高约束）
+        fScale       = 1.0,              -- 整体缩放：对最外层 container 调 SetScale，DoT/HP/头像/字体/间距全部等比缩放
         bReverseGrowth = false,          -- frames grow downward by default
         fRowGap = 20,                    -- 完整模式下两行之间的像素间距（紧凑模式总用 6px）
         bShowMissingDoTs = true,         -- show DoT slots even when not applied (faded)
@@ -315,6 +316,7 @@ function MBT:OnProfileChanged()
     if MBT.ApplyPortraitMode  then MBT:ApplyPortraitMode() end
     if MBT.UpdateDotTextSize  then MBT:UpdateDotTextSize() end
     if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
+    if MBT.ApplyScale         then MBT.ApplyScale() end   -- 内部会调 ApplyAnchor
     if MBT.ApplyAnchor        then MBT.ApplyAnchor() end
     if MBT.SetLocked          then MBT.SetLocked(MBT.db.profile.bLocked) end
 

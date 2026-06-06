@@ -676,9 +676,21 @@ local function BuildOptionsTable()
                             if MBT.UpdateDotTextSize then MBT:UpdateDotTextSize() end
                         end,
                     },
+                    fScale = {
+                        order = 11.3, type = "range", name = "整体缩放",
+                        desc = "把整个面板一起放大或缩小（血条、头像、DoT、文字都跟着变），位置不动。\n只想单独改 DoT 图标大小，用下面那个。",
+                        width = "full",
+                        min = 0.5, max = 2.0, step = 0.05,
+                        isPercent = true,
+                        get = function() return MBT.db.profile.fScale end,
+                        set = function(_, v)
+                            MBT.db.profile.fScale = v
+                            if MBT.ApplyScale then MBT.ApplyScale() end
+                        end,
+                    },
                     iDotSize = {
-                        order = 16, type = "range", name = "DoT 图标大小（像素）",
-                        desc = "DoT 图标的边长。整框会跟着按比例放大（HP 高 / 头像 / 总宽都同步）。",
+                        order = 11.6, type = "range", name = "DoT 图标大小（像素）",
+                        desc = "DoT 图标的大小。框体大小不变，图标越大、上面的血条就越窄。\n想让整个面板（连字带头像）一起放大缩小，用上面的「整体缩放」。",
                         width = "full",
                         min = 16, max = 48, step = 2,
                         get = function() return MBT.db.profile.iDotSize end,

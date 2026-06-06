@@ -47,9 +47,24 @@ container:SetClampedToScreen(true)
 local function ApplyAnchor()
     container:ClearAllPoints()
     local a = MBT.db.profile.anchor
-    container:SetPoint(a.point or "CENTER", UIParent, a.relPoint or "CENTER", a.x or 0, a.y or 0)
+    -- 存储的偏移是 UIParent 坐标系（与 scale 无关）。SetPoint 的偏移按 container 自身 effective scale 解读，
+    -- 所以这里除以 container scale 换算回去 —— 这样改整体缩放时框体中心维持不变、不会跳。
+    local s = container:GetScale()
+    if not s or s == 0 then s = 1 end
+    container:SetPoint(a.point or "CENTER", UIParent, a.relPoint or "CENTER", (a.x or 0) / s, (a.y or 0) / s)
 end
 MBT.ApplyAnchor = ApplyAnchor
+
+-- 整体缩放：对最外层 container 调 SetScale → DoT/HP/头像/字体/间距全部等比缩放（一处搞定，不动布局数学）。
+-- 缩放后必须重跑 ApplyAnchor：存储锚点是 UIParent 坐标，ApplyAnchor 会按新 scale 换算，保持框体中心不动。
+local function ApplyScale()
+    local s = MBT.db.profile.fScale or 1
+    if s < 0.3 then s = 0.3 end
+    if s > 3   then s = 3   end
+    container:SetScale(s)
+    ApplyAnchor()
+end
+MBT.ApplyScale = ApplyScale
 
 -- 拖动条：解锁时显示在容器顶部的"标题栏"风格条带，长得就像窗口标题栏。
 -- 用户从这里点击拖动，比把整个容器染色直观得多。
@@ -91,11 +106,15 @@ dragBar:SetScript("OnDragStop", function()
     local cx, cy = container:GetCenter()
     local px, py = UIParent:GetCenter()
     if cx and cy and px and py then
+        -- GetCenter 返回 container 自身坐标系；乘回 scale 换成 UIParent 坐标再存，
+        -- 这样存的偏移与缩放无关（改 scale 框体中心不动），且 scale=1 时与历史完全一致。
+        local s = container:GetScale()
+        if not s or s == 0 then s = 1 end
         MBT.db.profile.anchor = {
             point    = "CENTER",
             relPoint = "CENTER",
-            x        = cx - px,
-            y        = cy - py,
+            x        = cx * s - px,
+            y        = cy * s - py,
         }
         ApplyAnchor()
     end
@@ -205,7 +224,7 @@ MBT.ApplyCompactToAll = ApplyCompactToAll
 -- IMPORTANT: AceDB isn't ready yet at file load time — these all read MBT.db.profile.
 -- Defer to STATUS, which Core fires from OnEnable (i.e. after OnInitialize set MBT.db).
 MBT:RegisterMDFEvent("STATUS", function()
-    ApplyAnchor()
+    ApplyScale()        -- 设 container scale 并重锚（内部调 ApplyAnchor）
     ApplyCompactToAll()
     if MBT.ApplyPortraitMode then MBT:ApplyPortraitMode() end
     -- 透明模式：框体创建时 db 还没就绪（读到的永远是默认不透明），这里按真实配置补应用一次
