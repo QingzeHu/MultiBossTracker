@@ -33,7 +33,7 @@ tZonesData.tZones = {
         ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765,
                   tEnabledOptions = {"bTargetDummiesFight","bTargetDummyHeroic"} },
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177,
-                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyExpert"} },
+                  tEnabledOptions = {"bTargetDummiesFight","bTargetDummyGrandmaster"} },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152,
                   tEnabledOptions = {"bTargetDummiesFight","bTargetDummyExpert"} },
     },
@@ -60,13 +60,13 @@ tZonesData.tZones = {
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
     },
-    -- 暴风城 (Stormwind) — Old Town has dummies
-    ["旧城区"] = {
+    -- 暴风城 (Stormwind) — 假人在军情七处（SI:7），旧城区本身没有
+    ["军情七处"] = {
         ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152 },
     },
-    ["Old Town"] = {
+    ["SI:7"] = {
         ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
@@ -82,8 +82,8 @@ tZonesData.tZones = {
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
     },
-    -- 达纳苏斯 (Darnassus)
-    ["战士露台"] = {
+    -- 达纳苏斯 (Darnassus) — zhCN 客户端实际子区域是"战士区"
+    ["战士区"] = {
         ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152 },

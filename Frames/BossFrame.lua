@@ -26,8 +26,6 @@ local STANDARD_CAST_HEIGHT = 10        -- overlay 在 HP 底
 local DOT_GAP            = 2
 local BORDER_PX          = 1            -- 元素内缩量 = bd 黑底漏出形成"1px 硬边框"
 
-local HP_COLOR_NORMAL    = { 0.78, 0.18, 0.20, 1 }   -- 饱和深红
-local HP_COLOR_HIGHLIGHT = { 0.95, 0.30, 0.30, 1 }   -- 当前 target 高亮（更亮）
 local CAST_COLOR         = { 0.96, 0.78, 0.27, 1 }   -- 暖琥珀
 local PCAST_COLOR        = { 0.30, 0.85, 1.00, 1 }   -- 玩家施法条青色
 

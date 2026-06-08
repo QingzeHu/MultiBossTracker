@@ -23,7 +23,7 @@ tAuraData.tDamageInfos    = {}
 tAuraData.tSpellsInfos = {
     ["Frost Fever"] = {
         iDuration=15, sName="Frost Fever", iIcon=237522,
-        iColorR=0.254, iColorG=0.247, iColorB=9.247,
+        iColorR=0.254, iColorG=0.247, iColorB=0.947,
         iTalentedDuration = { iTalentPage=3, iTalentID=5, tIncDurations={[1]=3,[2]=6} },
     },
     ["Blood Plague"] = {
