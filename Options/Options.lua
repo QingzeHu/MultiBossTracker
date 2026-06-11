@@ -689,7 +689,7 @@ local function BuildOptionsTable()
                     },
                     fScale = {
                         order = 11.3, type = "range", name = "整体缩放",
-                        desc = "把整个面板一起放大或缩小（血条、头像、DoT、文字都跟着变），位置不动。\n只想单独改 DoT 图标大小，用下面那个。",
+                        desc = "把整个面板一起放大或缩小（血条、头像、DoT、文字都跟着变），位置不动。\n标准样式下还能在下方单独调 DoT 图标大小；极简样式下 DoT 大小与整体缩放等效，故只有这一个。",
                         width = "full",
                         min = 0.5, max = 2.0, step = 0.05,
                         isPercent = true,
@@ -701,7 +701,9 @@ local function BuildOptionsTable()
                     },
                     iDotSize = {
                         order = 11.6, type = "range", name = "DoT 图标大小（像素）",
-                        desc = "DoT 图标的大小。框体大小不变，图标越大、上面的血条就越窄。\n想让整个面板（连字带头像）一起放大缩小，用上面的「整体缩放」。",
+                        -- 极简样式下 DoT 大小 = 行高 = 整条尺寸，与「整体缩放」完全等效，故隐藏避免重复
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
+                        desc = "DoT 图标的大小。血条宽度固定不变 —— 图标越大，只会把血条往下挤、变矮，整框宽高都不变。\n代价：图标越大，固定宽度里能并排摆下的 DoT 个数越少（见下方提示）。\n想让整个面板（连字带头像）一起放大缩小，用上面的「整体缩放」。",
                         width = "full",
                         min = 16, max = 48, step = 2,
                         get = function() return MBT.db.profile.iDotSize end,
@@ -710,6 +712,15 @@ local function BuildOptionsTable()
                             -- 像素模式下 DoT 变化要触发整体 relayout（行高 / 头像 / 总宽都跟着变）
                             if MBT.ApplyCompactToAll then MBT.ApplyCompactToAll() end
                             if MBT.UpdateDotSize then MBT:UpdateDotSize() end
+                        end,
+                    },
+                    iDotSizeHint = {
+                        order = 11.65, type = "description", fontSize = "medium",
+                        -- 极简样式没有 DoT 大小滑条，提示也一并隐藏
+                        hidden = function() return MBT.db.profile.iSkin == 1 end,
+                        name = function()
+                            local maxN = MBT.MaxStandardDots and MBT.MaxStandardDots() or 7
+                            return ("当前大小最多能并排放下 |cFF66FF66%d|r 个 DoT。"):format(maxN)
                         end,
                     },
                     bTransparentBG = {

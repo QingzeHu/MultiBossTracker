@@ -8,17 +8,24 @@
 --   Icon:      55x54 on the left, square
 --   Backdrop:  black 0.4 alpha behind the whole row
 --   Border:    1px black edge
---   DoT row:   stretches right of the bars, max ~6 icons of 26x26
+--   DoT row:   标准=血条下方、血条宽度固定(DoT 只压血条高度，放不下的提示用户)；极简=血条右侧、固定预留 7 格(全职业统一长度)
 local addonName, MBT = ...
 
 MBT.BossFrames = {}     -- [frameID] = BossFrame
 local MAX_DOT_SLOTS = 8
+-- 极简模式固定预留的 DoT 槽位数（全职业统一，与内容无关）。
+-- 取 7 = 改动前极简模式的固定宽度，保证老用户更新后极简框长度"零感知变化"。
+-- 全职业一致：法师等少 DoT 会有空格、术士等多 DoT 也不超过 7（统一长度，不再两头极端）。
+local COMPACT_DOT_SLOTS = 7
 
 -- 像素风格尺寸（唯一样式）
 -- 极简（单行）：行高 = DoT + 2px 边，HP 高 = DoT，HP 宽 160，DoT 7 个 + 6 个 2px gap
 -- 标准（双行）：行高固定 = STANDARD_TOTAL_H(65)，头像方块 = 行高 - 2，HP 高 = 总高 - 3边 - DoT（DoT 越大 HP 越矮）
 local COMPACT_HP_WIDTH   = 160
-local STANDARD_HP_WIDTH  = 200
+-- 标准模式血条固定宽度。取 236 = 改动前「默认 DoT 尺寸 32」下的血条宽（旧 max(200, 7×32+12)=236，正好 7 格）。
+-- 固定于此 → 默认用户更新后宽度 / 能放的 DoT 个数(7) 与旧版完全一致(零感知变化)；
+-- 只有把 DoT 调大超过 32 的人才会看到"不再继续撑宽、改为压血条高度"(= 本次请求的修复)。
+local STANDARD_HP_WIDTH  = 236
 -- 标准模式：HP+DoT+3 边 的固定总高。DoT 改变只在内部 HP / DoT 之间重分配，整框高度恒定。
 local STANDARD_TOTAL_H   = 65          -- 3 边(3) + HP + DoT。DoT=32 → HP=30（历史默认）；DoT=48 → HP=14
 local HP_TEXT_MIN        = 14          -- HP 高度下限 = 血条字（GameFontNormalSmall）能显示的最小高度，也即 DoT 上限对应点
@@ -56,10 +63,42 @@ local function getDotSize()
     if d > 48 then d = 48 end
     return d
 end
-local function dotArea(d) return d * 7 + DOT_GAP * 6 end
+-- n 个 DoT 图标（边长 d、间距 DOT_GAP）横排占的总宽。
+local function dotAreaFor(n, d)
+    if n <= 0 then return 0 end
+    return n * d + (n - 1) * DOT_GAP
+end
 
--- 标准模式 HP 宽度：默认 200 / DoT 行更宽时跟着涨（保持视觉对齐）
-local function standardContentW(d) return math.max(STANDARD_HP_WIDTH, dotArea(d)) end
+-- 当前 spec 启用（未被 DoT 黑名单关掉）的 DoT 槽位数 —— 按 sSlotName 去重（同组咒语共用一个图标槽）。
+-- class 数据未就绪时返回 nil，调用方自行兜底（按 7 格）。
+local function enabledDotCount()
+    local cd = MBT.formattedClassData
+    if not cd or not cd.tSpellsInfos then return nil end
+    local seen, n = {}, 0
+    for _, v in pairs(cd.tSpellsInfos) do
+        if v.bEnabled then
+            local key = v.sSlotName or v.sName
+            if key and not seen[key] then seen[key] = true; n = n + 1 end
+        end
+    end
+    return n
+end
+MBT.EnabledDotCount = enabledDotCount
+
+-- 固定宽度 W 里、DoT 边长 d、间距 DOT_GAP，最多能横排下几个图标。
+-- N*d + (N-1)*DOT_GAP <= W  →  N <= (W + DOT_GAP) / (d + DOT_GAP)
+local function maxDotsInWidth(d, W)
+    return math.max(1, math.floor((W + DOT_GAP) / (d + DOT_GAP)))
+end
+-- 标准样式下：当前 DoT 大小，固定血条宽度里最多能摆几个 DoT（给选项页提示用）。
+function MBT.MaxStandardDots()
+    return maxDotsInWidth(getDotSize(), STANDARD_HP_WIDTH)
+end
+
+-- 标准模式 HP 宽度：固定 STANDARD_HP_WIDTH，不随 DoT 变。
+-- DoT 大小只向下挤压 HP 高度（见 standardHpHeight），绝不撑宽整框；
+-- 图标越大、这条固定宽度里能排下的 DoT 越少（见 maxDotsInWidth / 选项页提示）。
+local function standardContentW(d) return STANDARD_HP_WIDTH end
 -- 标准模式 HP 高度：固定总高里减掉 DoT 和 3 条边，剩下的给 HP。
 -- DoT 越大 → HP 越矮（向下挤压血条），直到 HP 触到字高下限 HP_TEXT_MIN（此时 DoT 达上限 48）。
 -- 整框总高 = 3b + hpH + d = STANDARD_TOTAL_H 恒定，头像 = 总高 - 2b 恒定，所以 DoT 不再撑大整框。
@@ -69,7 +108,8 @@ local function standardHpHeight(d) return math.max(HP_TEXT_MIN, STANDARD_TOTAL_H
 local function totalWidth(compact)
     local d = getDotSize()
     if compact then
-        return COMPACT_HP_WIDTH + dotArea(d) + 6   -- 1L + HP + 2mid + DoT + 1R
+        -- 极简：DoT 在血条右侧，固定预留 COMPACT_DOT_SLOTS 格（全职业统一，长度恒定）
+        return COMPACT_HP_WIDTH + dotAreaFor(COMPACT_DOT_SLOTS, d) + 6   -- 1L + HP + 2mid + DoT + 1R
     end
     local rowH = BORDER_PX * 3 + standardHpHeight(d) + d
     local portrait = rowH - BORDER_PX * 2
@@ -677,7 +717,8 @@ local function applyCompact(btn)
     local pipH = pipExtraH()                   -- 0（无配置）/ PIP_H + PIP_INSET_Y
     local rowH = d + b * 2 + pipH               -- 行高 = DoT + 上下 1px 边 (+ pip 行)
     local hpH  = d                              -- HP 同高（贴齐 DoT）
-    local da = dotArea(d)
+    -- DoT 区宽 = 固定 COMPACT_DOT_SLOTS 格 ×（边长 + 间距）。全职业统一长度，与改动前一致。
+    local da = dotAreaFor(COMPACT_DOT_SLOTS, d)
     local W = COMPACT_HP_WIDTH + da + b * 2 + 2
     btn:SetSize(W, rowH)
     btn.icon:Hide()
@@ -752,8 +793,7 @@ local function applyStandard(btn)
     local portraitW = portraitH                       -- 正方形
     local portraitX = b
     local hpX = portraitX + portraitW + b
-    local da = dotArea(d)
-    local hpW = standardContentW(d)                   -- HP 宽 = max(默认 200, DoT 行宽)
+    local hpW = standardContentW(d)                   -- HP 宽 = 固定 STANDARD_HP_WIDTH(236)，不随 DoT 变
     local W = hpX + hpW + b
 
     btn:SetSize(W, rowH)
@@ -790,7 +830,7 @@ local function applyStandard(btn)
     btn.playerCast:SetStatusBarColor(unpack(PCAST_COLOR))
 
     btn.dotRow:ClearAllPoints()
-    btn.dotRow:SetSize(da, d)
+    btn.dotRow:SetSize(hpW, d)                         -- DoT 行与血条等宽（固定）；图标在这条宽度内横排
     btn.dotRow:SetPoint("TOPLEFT", btn.hp, "BOTTOMLEFT", 0, -b)
 
     -- pip 行 —— 在底部内侧、DoT 下方
