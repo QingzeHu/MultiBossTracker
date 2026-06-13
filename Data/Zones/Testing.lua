@@ -71,13 +71,13 @@ tZonesData.tZones = {
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },
     },
-    -- 雷霆崖 (Thunder Bluff)
-    ["艾森娜高地"] = {
+    -- 雷霆崖 (Thunder Bluff) — 假人在猎人高地
+    ["猎人高地"] = {
         ["A"] = { sNPCID = "31146", sTarName = "英雄训练假人",       iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "宗师的训练假人",     iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "专家的训练假人",     iIcon = 134152 },
     },
-    ["Elder Rise"] = {
+    ["Hunter Rise"] = {
         ["A"] = { sNPCID = "31146", sTarName = "Heroic Training Dummy",      iIcon = 132765 },
         ["B"] = { sNPCID = "31144", sTarName = "Grandmaster's Training Dummy", iIcon = 132177 },
         ["C"] = { sNPCID = "32666", sTarName = "Expert's Training Dummy",     iIcon = 134152 },

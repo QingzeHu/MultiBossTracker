@@ -4,7 +4,7 @@
 ## Notes: Multi-target boss frames with click-cast — track HP / DoTs / casts across up to 5 bosses
 ## Notes-zhCN: 多目标 Boss 追踪 — 一屏显示最多 5 个 boss 的血条、DoT、施法条，支持点击施法
 ## Author: Qingze Hu
-## Version: 1.11.0
+## Version: 1.12.0
 ## X-License: MIT
 ## X-Category: Combat
 ## SavedVariables: MultiBossTrackerDB

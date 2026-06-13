@@ -45,7 +45,7 @@ tAuraData.tDotAuras = {
     [1490] = "Curse of the Elements", [11721] = "Curse of the Elements",
     [11722] = "Curse of the Elements", [27228] = "Curse of the Elements",
     [47865] = "Curse of the Elements",
-    -- 自定义印记 debuff（私服扩展）
+    -- 自定义印记 debuff（本服扩展）
     [1295144] = "Ember Brand",
     [1295140] = "Shadow Brand",
     [29341]   = "Shadowburn",
@@ -170,7 +170,7 @@ tAuraData.tStackPips = {
     sTextFormat = "%d/%d",         -- 左侧两个数字格式：余烬/max + 暗影/max
     -- 只有毁灭天赋才显示这条 UI；其它天赋下 boss 框退回原始形态、不占空间
     -- 标识符：毁灭专属 talent 赋予的"混沌流星" (技能 ID 1295386)
-    -- 选择技能而不是 talent 点：私服 talent API 返回结构异常（name 是数字串、pts 空），
+    -- 选择技能而不是 talent 点：本服 talent API 返回结构异常（name 是数字串、pts 空），
     -- 但 IsPlayerSpell 工作正常 —— talent 选/不选会立刻反映到技能学习状态
     -- 用户也可以在 DoT 黑名单 → 术士 → "隐藏印记层数指示条" 强制关闭这条 UI
     fnEnabled = function()
@@ -199,7 +199,7 @@ tAuraData.tChannelBar = {
     --   +delta（绿）= proc 触发了 / SP 涨了 → 当前 channel 没吃到 → recast 划算
     --   -delta（红）= cast 时锁住的 proc 已过期 → 继续吸（channel 还在吃旧 SP）
     --    delta = 0 = 没变化 → 显示默认 "吸取灵魂" 文字
-    -- 数值跟你私服的实际 DS 平衡数值绑定，下面是 WotLK rank 9 原值；私服改了请对应调整
+    -- 数值跟本服的实际 DS 平衡数值绑定，下面是 WotLK rank 9 原值；数值改了请对应调整
     iShadowSchool   = 6,               -- GetSpellBonusDamage(6) = 暗影系
     fSnapshotBase   = 840,             -- 单跳基础伤害
     fSnapshotCoef   = 2.145,           -- 法强系数（5 跳 × 单跳系数 0.429）

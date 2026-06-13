@@ -20,8 +20,22 @@ tAuraData.tDotAuras = {
     [17313]="Mind Flay", [17314]="Mind Flay", [18807]="Mind Flay",
     [25387]="Mind Flay", [48155]="Mind Flay", [48156]="Mind Flay",
 }
-tAuraData.tDamageTriggers = {}
-tAuraData.tDamageInfos    = {}
+-- 暗言术：渊 (Shadow Word: Void, 本服改版法) —— 靠"造成伤害"触发刷新，机制同暗影箭→腐蚀术。
+-- 天赋"坍缩深渊"(TalentID 23718)选了之后命中会刷新 SW:P 和吸血鬼之触的持续时间。
+-- 注意本服把施法/伤害拆成了不同 spellID（实测战斗日志抓到）：
+--   1299469 = SPELL_CAST_SUCCESS（施法），1303671 = 上身的叠层光环，1303676 = SPELL_DAMAGE（伤害）。
+-- tDamageTriggers 只匹配 SPELL_DAMAGE，所以必须用伤害 ID 1303676，不能用施法 ID。
+tAuraData.tDamageTriggers = {
+    [1303676] = "Shadow Word: Void",
+}
+tAuraData.tDamageInfos    = {
+    ["Shadow Word: Void"] = {
+        tRefreshAura = {
+            tRefreshTalent = { iRow = 0, iIndex = 23718 },  -- 坍缩深渊；MoP talent API 取不到，Formatter 默认置 bEnabled=true
+            tAuras = { "Shadow Word: Pain", "Vampiric Touch" },
+        },
+    },
+}
 
 tAuraData.tSpellsInfos = {
     ["Shadow Word: Pain"] = {
