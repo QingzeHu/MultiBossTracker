@@ -192,7 +192,8 @@ tAuraData.tChannelBar = {
     -- Haunt 续断标记
     iHauntSpellID  = 48181,           -- 查询 target 上自己的 Haunt debuff 剩余时间用
     iHasteRefSpell = 6215,            -- Fear (基础 1.5s 施法) —— 用它的当前施法时间反推急速倍率
-    fRangeEstimate = 30,              -- target 距离估算（yd）—— 公式：travel = 0.058 * range
+    fRangeEstimate = 30,              -- target 距离【兜底】值（yd）—— 正常走实时测距(WeakAuras.GetRange/LibRangeCheck)，
+                                      -- 只有环境里没有任何测距来源时才用它；公式：travel = 0.058 * range
 
     -- Snapshot DPS delta（基于 Fojji WA 的 WotLK 痛苦术公式）：
     -- 引导开始时锁定当前法强对应的"基线 DPS"，运行中持续对比"当前 DPS"

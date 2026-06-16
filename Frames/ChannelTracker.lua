@@ -43,6 +43,26 @@ local function getLatencySec()
     return (worldMS or 0) / 1000
 end
 
+-- target 实时距离估算：取 range bracket 上界 maxRange（和 Fojji WA 的 `(_,maxDistance)` 一致）。
+-- 来源优先级：WeakAuras.GetRange（就是那条 WA 用的同一个函数，保证两边读数完全一致）
+--   → LibRangeCheck-2.0 共享实例（WA / 其它插件注册的）→ 都没有时回退到 cfg 的固定估算。
+-- 注意：这依赖环境里装了 WeakAuras（或任何带 LibRangeCheck 的插件）。没有时自动退回固定值。
+local rangeLib
+local function getTargetRange(fallback)
+    if WeakAuras and WeakAuras.GetRange then
+        local ok, _, maxRange = pcall(WeakAuras.GetRange, "target")
+        if ok and maxRange then return maxRange end
+    end
+    if not rangeLib and LibStub then
+        rangeLib = LibStub("LibRangeCheck-2.0", true)
+    end
+    if rangeLib then
+        local ok, _, maxRange = pcall(rangeLib.GetRange, rangeLib, "target")
+        if ok and maxRange then return maxRange end
+    end
+    return fallback
+end
+
 -- ---------------------------------------------------------------------
 -- Snapshot DPS delta
 -- store：cast 时锁定（SP / mod / dur 全锁）= 当前 channel 实际在做的 DPS
@@ -115,7 +135,7 @@ local function computeHauntBreakValue(cfg, dsChannel, dsStartTime)
     if not hauntRem then return nil end
     local dsSinceCast = GetTime() - dsStartTime
     local castTime = getHauntCastTime(cfg.iHasteRefSpell)
-    local travelTime = 0.058 * (cfg.fRangeEstimate or 30)
+    local travelTime = 0.058 * getTargetRange(cfg.fRangeEstimate or 30)
     local latency = getLatencySec()
     local hauntTime = castTime + travelTime + latency
     local relativeTick = dsChannel - dsSinceCast - hauntRem + hauntTime
