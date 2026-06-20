@@ -135,6 +135,43 @@ local function ClassBarColors(classToken)
     return normal, highlight
 end
 
+-- boss HP 条材质 / 颜色，走 LibSharedMedia。自注册一条纯色（= 旧 WHITE8X8）作内置默认。
+local LSM = LibStub("LibSharedMedia-3.0", true)
+if LSM then
+    LSM:Register("statusbar", "MultiBossTracker", SOLID)
+end
+
+-- 当前配置选的血条材质 → 贴图路径；缺库 / 名字解析失败时回退纯色
+local function getBarTexture()
+    local name = MBT.db and MBT.db.profile.sBarTexture
+    if LSM and name then
+        return LSM:Fetch("statusbar", name) or SOLID
+    end
+    return SOLID
+end
+
+-- 「默认」血条常态色：取玩家自定义色，未设回退旧暗红
+local function getBarColorNormal()
+    local c = MBT.db and MBT.db.profile.cBarColor
+    if c then return c[1], c[2], c[3], 1 end
+    return HP_COLOR_NORMAL[1], HP_COLOR_NORMAL[2], HP_COLOR_NORMAL[3], 1
+end
+-- 高亮（当前 target）= 常态色朝白提亮 30%
+local function getBarColorHighlight()
+    local r, g, b = getBarColorNormal()
+    return r + (1 - r) * 0.3, g + (1 - g) * 0.3, b + (1 - b) * 0.3, 1
+end
+
+-- 带逐帧职业色（阵营冠军）的优先用职业色，其它走默认/自定义色
+local function applyBarColorNormal(hp, btn)
+    if btn and btn.hpColorNormal then hp:SetStatusBarColor(unpack(btn.hpColorNormal))
+    else hp:SetStatusBarColor(getBarColorNormal()) end
+end
+local function applyBarColorHighlight(hp, btn)
+    if btn and btn.hpColorHighlight then hp:SetStatusBarColor(unpack(btn.hpColorHighlight))
+    else hp:SetStatusBarColor(getBarColorHighlight()) end
+end
+
 -- 透明模式下血条区域的分层透明度。血条 = 黑底 + 暗红底 + 红色填充三层叠加，
 -- 必须每层单独调透才有效（只调整帧 alpha 时三层叠加后仍接近不透明，看不出透）：
 --   黑底 / 暗红底 → HP_TRANSPARENT_BG_ALPHA（很透 → 掉血的部分能清楚透出场景）
@@ -323,9 +360,8 @@ local function CreateBossFrame(frameID, parent)
     local hp = CreateFrame("StatusBar", nil, btn)
     hp:SetSize(200, 30)   -- 占位
     hp:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)   -- 占位锚点
-    hp:SetStatusBarTexture(SOLID)
-    -- WoW 经典敌方单位的血红，调暗一档（原 0.78 → 0.62），更稳重不刺眼
-    hp:SetStatusBarColor(unpack(HP_COLOR_NORMAL))
+    hp:SetStatusBarTexture(getBarTexture())
+    applyBarColorNormal(hp, btn)
     hp:SetMinMaxValues(0, 100)
     hp:SetValue(100)
     -- HP bar background（透明模式下 alpha 由 ApplyFrameTransparency 调低）
@@ -727,7 +763,7 @@ local function applyCompact(btn)
     btn.hp:ClearAllPoints()
     btn.hp:SetSize(COMPACT_HP_WIDTH, hpH)
     btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", b, -b)
-    btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
+    applyBarColorNormal(btn.hp, btn)
 
     btn.dotRow:ClearAllPoints()
     btn.dotRow:SetSize(da, hpH)
@@ -816,7 +852,7 @@ local function applyStandard(btn)
     btn.hp:ClearAllPoints()
     btn.hp:SetSize(hpW, hpH)
     btn.hp:SetPoint("TOPLEFT", btn, "TOPLEFT", hpX, -b)
-    btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
+    applyBarColorNormal(btn.hp, btn)
 
     btn.cast:ClearAllPoints()
     btn.cast:SetSize(hpW, STANDARD_CAST_HEIGHT)
@@ -967,6 +1003,20 @@ function MBT:UpdateDotTextSize()
     end
 end
 
+-- 材质变更：换贴图。SetStatusBarTexture 会把顶点色重置为白，故随后用 UpdateTargetHighlight 统一恢复颜色。
+function MBT:UpdateBarTexture()
+    local tex = getBarTexture()
+    for _, btn in pairs(MBT.BossFrames or {}) do
+        if btn.hp then btn.hp:SetStatusBarTexture(tex) end
+    end
+    if MBT.UpdateTargetHighlight then MBT:UpdateTargetHighlight() end
+end
+
+-- 颜色变更：重应用到所有帧
+function MBT:UpdateBarColor()
+    if MBT.UpdateTargetHighlight then MBT:UpdateTargetHighlight() end
+end
+
 -- 单一 OnUpdate 周期性更新所有 DoT 槽位的倒计时数字（节流 0.05s = 20Hz）。
 local cdUpdater = CreateFrame("Frame")
 local cdAccum = 0
@@ -1020,24 +1070,52 @@ end
 
 -- Boss 框体级 combo 高亮：多个 DoT 同时满足条件 → 整框亮起特效
 -- 数据驱动 —— 读 tAuraData.tComboGlows，所以扩展到其它职业零代码
+-- 样式 / 颜色可被 db 覆盖（术士专属设置）；db 没设或值非法时用职业数据自带值
+local GLOW_STYLES = { pixel = true, autocast = true, button = true, proc = true }
+local function comboStyle(c)
+    local s = MBT.db and MBT.db.profile.sWarlockGlowStyle
+    return (s and GLOW_STYLES[s] and s) or c.sStyle or "autocast"
+end
+local function comboColor(c)
+    local col = MBT.db and MBT.db.profile.cWarlockGlowColor
+    if col then return { col[1], col[2], col[3], 1 } end
+    return c.tColor
+end
+local function comboFreq(c)
+    return (MBT.db and MBT.db.profile.fWarlockGlowFreq) or c.fFrequency or 0.5
+end
+local function comboThickness(c)
+    return (MBT.db and MBT.db.profile.iWarlockGlowThickness) or c.iThickness or 2
+end
+local function comboDots(c)
+    return (MBT.db and MBT.db.profile.iWarlockGlowDots) or c.iDots or 8
+end
+local function comboScale(c)
+    return (MBT.db and MBT.db.profile.fWarlockGlowScale) or 1
+end
+local function comboParticles(c)
+    return (MBT.db and MBT.db.profile.iWarlockGlowParticles) or 4
+end
+
 local function startComboGlow(btn, c)
-    if c.sStyle == "pixel" then
-        LCG.PixelGlow_Start(btn, c.tColor, c.iDots or 8, c.fFrequency or 0.5, nil, c.iThickness or 2, 0, 0, false, c.sName)
-    elseif c.sStyle == "button" then
-        LCG.ButtonGlow_Start(btn, c.tColor, c.fFrequency or 0.125)
+    local style, color, freq = comboStyle(c), comboColor(c), comboFreq(c)
+    if style == "pixel" then
+        LCG.PixelGlow_Start(btn, color, comboDots(c), freq, nil, comboThickness(c), 0, 0, false, c.sName)
+    elseif style == "button" then
+        LCG.ButtonGlow_Start(btn, color, freq)
+    elseif style == "proc" then
+        LCG.ProcGlow_Start(btn, { color = color, key = c.sName })
     else  -- autocast 默认
-        LCG.AutoCastGlow_Start(btn, c.tColor, 4, c.fFrequency or 0.5, 1, 0, 0, c.sName)
+        LCG.AutoCastGlow_Start(btn, color, comboParticles(c), freq, comboScale(c), 0, 0, c.sName)
     end
 end
 
+-- 全样式都停一遍：样式可能刚被改，按当前样式停会漏掉旧光圈，逐个停最稳
 local function stopComboGlow(btn, c)
-    if c.sStyle == "pixel" then
-        LCG.PixelGlow_Stop(btn, c.sName)
-    elseif c.sStyle == "button" then
-        LCG.ButtonGlow_Stop(btn)
-    else
-        LCG.AutoCastGlow_Stop(btn, c.sName)
-    end
+    LCG.PixelGlow_Stop(btn, c.sName)
+    LCG.AutoCastGlow_Stop(btn, c.sName)
+    LCG.ButtonGlow_Stop(btn)
+    if LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(btn, c.sName) end
 end
 
 local function UpdateBossComboGlow(btn)
@@ -1064,6 +1142,23 @@ local function UpdateBossComboGlow(btn)
             stopComboGlow(btn, combo)
             btn.comboGlows[combo.sName] = nil
         end
+    end
+end
+
+-- 光圈样式 / 颜色变更（术士专属设置调）：把当前亮着的光圈全停掉、清状态，再按新配置重判一次。
+function MBT:RefreshComboGlows()
+    if not LCG then return end
+    for _, btn in pairs(MBT.BossFrames or {}) do
+        if btn.comboGlows then
+            for name in pairs(btn.comboGlows) do
+                LCG.PixelGlow_Stop(btn, name)
+                LCG.AutoCastGlow_Stop(btn, name)
+                LCG.ButtonGlow_Stop(btn)
+                if LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(btn, name) end
+            end
+            wipe(btn.comboGlows)
+        end
+        UpdateBossComboGlow(btn)
     end
 end
 
@@ -1201,7 +1296,7 @@ function MBT:HighlightFrame(btn, on)
     if not btn then return end
     local useGlow = MBT.db and MBT.db.profile and MBT.db.profile.iTargetHighlight == 2
     if on then
-        btn.hp:SetStatusBarColor(unpack(btn.hpColorHighlight or HP_COLOR_HIGHLIGHT))
+        applyBarColorHighlight(btn.hp, btn)
         if useGlow then
             -- 蓝色光晕样式：显示光晕、藏掉黄竖线
             if btn.accent then btn.accent:Hide() end
@@ -1212,7 +1307,7 @@ function MBT:HighlightFrame(btn, on)
             if btn.accent then btn.accent:Show() end
         end
     else
-        btn.hp:SetStatusBarColor(unpack(btn.hpColorNormal or HP_COLOR_NORMAL))
+        applyBarColorNormal(btn.hp, btn)
         if btn.accent then btn.accent:Hide() end
         if btn.targetGlow then btn.targetGlow:Hide() end
     end

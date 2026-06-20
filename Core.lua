@@ -105,6 +105,19 @@ MBT.defaults = {
         bClassicBarDynamicHeight = false,
         iClassicBarHeight = 12,
 
+        -- 血条材质 / 颜色（仅 boss HP 条），走 LibSharedMedia。默认 = 自注册纯色 + 旧暗红，升级零视觉变化。
+        sBarTexture = "MultiBossTracker",
+        cBarColor   = { 0.62, 0.00, 0.00 },
+
+        -- 术士专属：余烬 / 暗影印记双 6 层整框光圈。默认全对齐术士数据现值 → 升级零视觉变化。
+        sWarlockGlowStyle     = "pixel",     -- pixel | autocast | button | proc
+        cWarlockGlowColor     = { 1.0, 0.6, 0.1 },
+        fWarlockGlowFreq      = 0.5,         -- 转速（周期/秒，越大越快）；pixel/autocast/button 通用
+        iWarlockGlowThickness = 2,           -- 像素线条粗细（仅 pixel）
+        iWarlockGlowDots      = 8,           -- 像素流动点数（仅 pixel）
+        fWarlockGlowScale     = 2.0,         -- 自动施法光点大小（仅 autocast；lib 原始 1 太小看不清，默认放大）
+        iWarlockGlowParticles = 4,           -- 自动施法光点数量（仅 autocast）
+
         -- Anchor (draggable position) — only saved once first dragged
         anchor = {
             point = "CENTER",
@@ -317,6 +330,7 @@ function MBT:OnProfileChanged()
     if MBT.ApplyPortraitMode  then MBT:ApplyPortraitMode() end
     if MBT.UpdateDotTextSize  then MBT:UpdateDotTextSize() end
     if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
+    if MBT.UpdateBarTexture   then MBT:UpdateBarTexture() end
     if MBT.ApplyScale         then MBT.ApplyScale() end   -- 内部会调 ApplyAnchor
     if MBT.ApplyAnchor        then MBT.ApplyAnchor() end
     if MBT.SetLocked          then MBT.SetLocked(MBT.db.profile.bLocked) end

@@ -6,6 +6,7 @@ local AceConfig         = LibStub("AceConfig-3.0")
 local AceConfigDialog   = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceDBOptions      = LibStub("AceDBOptions-3.0")
+local LSM               = LibStub("LibSharedMedia-3.0", true)  -- 材质选框 / 取色器用；缺库时材质退化为普通下拉
 
 -- 职业组：(配置子键, 显示名)。子键对应 db.tCastingModeBindings/tForceDoTOrder 里的字段名。
 local CLASS_GROUPS = {
@@ -641,6 +642,30 @@ local function BuildOptionsTable()
                             if MBT.UpdateTargetHighlight then MBT:UpdateTargetHighlight() end
                         end,
                     },
+                    sBarTexture = {
+                        order = 11.15, type = "select", name = "血条材质", width = 1.0,
+                        dialogControl = LSM and "LSM30_Statusbar" or nil,
+                        desc = "Boss 血条的填充材质。",
+                        values = function() return (LSM and LSM:HashTable("statusbar")) or { MultiBossTracker = "MultiBossTracker" } end,
+                        get = function() return MBT.db.profile.sBarTexture end,
+                        set = function(_, v)
+                            MBT.db.profile.sBarTexture = v
+                            if MBT.UpdateBarTexture then MBT:UpdateBarTexture() end
+                        end,
+                    },
+                    cBarColor = {
+                        order = 11.16, type = "color", name = "血条颜色", width = 0.5,
+                        hasAlpha = false,
+                        desc = "Boss 血条的填充颜色。",
+                        get = function()
+                            local c = MBT.db.profile.cBarColor or { 0.62, 0, 0 }
+                            return c[1], c[2], c[3]
+                        end,
+                        set = function(_, r, g, b)
+                            MBT.db.profile.cBarColor = { r, g, b }
+                            if MBT.UpdateBarColor then MBT:UpdateBarColor() end
+                        end,
+                    },
                     bReverseGrowth = {
                         order = 12, type = "toggle", name = "Boss 框体从下往上堆叠",
                         desc = "默认 5 个 boss 框体从屏幕上方往下方依次堆叠。\n勾选后改为从下往上 —— 适合把整个面板放在屏幕下半区的玩家。\n（注：不影响 DoT 图标的左右顺序，那个在 DoT 排序 标签里）",
@@ -826,6 +851,93 @@ local function BuildOptionsTable()
                             end
                         end,
                     },
+
+                    -- ===== 术士专属设置 =====
+                    hWarlock = { order = 45, type = "header", name = "术士专属设置" },
+                    warlockGlow = {
+                        order = 46, type = "group", inline = true,
+                        name = "余烬 / 暗影印记高亮光圈",
+                        args = {
+                    sWarlockGlowStyle = {
+                        order = 45.1, type = "select", name = "光圈样式", width = 1.0,
+                        desc = "余烬 / 暗影印记双 6 层时整框光圈的样式。",
+                        values = { pixel = "像素描边", autocast = "自动施法流光", button = "按钮高光", proc = "脉冲流光" },
+                        sorting = { "pixel", "autocast", "button", "proc" },
+                        get = function() return MBT.db.profile.sWarlockGlowStyle end,
+                        set = function(_, v)
+                            MBT.db.profile.sWarlockGlowStyle = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    cWarlockGlowColor = {
+                        order = 45.2, type = "color", name = "光圈颜色", width = 0.5,
+                        hasAlpha = false,
+                        desc = "余烬 / 暗影印记双 6 层时整框光圈的颜色。",
+                        get = function()
+                            local c = MBT.db.profile.cWarlockGlowColor or { 1.0, 0.6, 0.1 }
+                            return c[1], c[2], c[3]
+                        end,
+                        set = function(_, r, g, b)
+                            MBT.db.profile.cWarlockGlowColor = { r, g, b }
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    fWarlockGlowFreq = {
+                        order = 45.3, type = "range", name = "光圈转速", width = "full",
+                        desc = "光圈动画的快慢，越大越快。",
+                        min = 0.05, max = 2.0, step = 0.05,
+                        get = function() return MBT.db.profile.fWarlockGlowFreq end,
+                        set = function(_, v)
+                            MBT.db.profile.fWarlockGlowFreq = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    iWarlockGlowThickness = {
+                        order = 45.4, type = "range", name = "光圈线条粗细", width = 0.5,
+                        desc = "像素描边的线条粗细。",
+                        hidden = function() return MBT.db.profile.sWarlockGlowStyle ~= "pixel" end,
+                        min = 1, max = 6, step = 1,
+                        get = function() return MBT.db.profile.iWarlockGlowThickness end,
+                        set = function(_, v)
+                            MBT.db.profile.iWarlockGlowThickness = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    iWarlockGlowDots = {
+                        order = 45.5, type = "range", name = "光圈流动点数", width = 0.5,
+                        desc = "像素描边沿框体周长流动的点数。",
+                        hidden = function() return MBT.db.profile.sWarlockGlowStyle ~= "pixel" end,
+                        min = 1, max = 16, step = 1,
+                        get = function() return MBT.db.profile.iWarlockGlowDots end,
+                        set = function(_, v)
+                            MBT.db.profile.iWarlockGlowDots = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    fWarlockGlowScale = {
+                        order = 45.6, type = "range", name = "光点大小", width = 0.5,
+                        desc = "自动施法流光每颗光点的大小。",
+                        hidden = function() return MBT.db.profile.sWarlockGlowStyle ~= "autocast" end,
+                        min = 0.5, max = 5.0, step = 0.1,
+                        get = function() return MBT.db.profile.fWarlockGlowScale end,
+                        set = function(_, v)
+                            MBT.db.profile.fWarlockGlowScale = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                    iWarlockGlowParticles = {
+                        order = 45.7, type = "range", name = "光点数量", width = 0.5,
+                        desc = "自动施法流光环绕框体的光点数量。",
+                        hidden = function() return MBT.db.profile.sWarlockGlowStyle ~= "autocast" end,
+                        min = 1, max = 8, step = 1,
+                        get = function() return MBT.db.profile.iWarlockGlowParticles end,
+                        set = function(_, v)
+                            MBT.db.profile.iWarlockGlowParticles = v
+                            if MBT.RefreshComboGlows then MBT:RefreshComboGlows() end
+                        end,
+                    },
+                        }, -- warlockGlow.args
+                    },     -- warlockGlow（内联子组）
 
                     -- ===== QQ 交流群 =====
                     hCommunity = { order = 50, type = "header", name = "QQ 交流群" },

@@ -229,6 +229,8 @@ MBT:RegisterMDFEvent("STATUS", function()
     if MBT.ApplyPortraitMode then MBT:ApplyPortraitMode() end
     -- 透明模式：框体创建时 db 还没就绪（读到的永远是默认不透明），这里按真实配置补应用一次
     if MBT.ApplyBackgroundOpacity then MBT:ApplyBackgroundOpacity() end
+    -- 血条材质同理：创建时 db 没就绪，回退默认纯色，这里按配置补设一次
+    if MBT.UpdateBarTexture then MBT:UpdateBarTexture() end
     -- 拖动条按 锁定状态 + 当前区域是否有数据 显示/隐藏
     UpdateDragBarVisibility()
 end)
