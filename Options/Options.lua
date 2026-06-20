@@ -940,23 +940,19 @@ local function BuildOptionsTable()
                     },     -- warlockGlow（内联子组）
 
                     -- ===== QQ 交流群 =====
-                    hCommunity = { order = 50, type = "header", name = "QQ 交流群" },
-                    qqGroup = {
+                    hCommunity = { order = 50, type = "header", name = "交流群" },
+                    wechat = {
                         order = 51, type = "execute",
-                        -- 用 InteractiveLabel 让这条渲染成可点击的文本，而不是按钮
                         dialogControl = "InteractiveLabel",
-                        name = "多目标 Boss 追踪交流群\nQQ群号：|cFFFFD200124134274|r\n密码：|cFFFFD200多目标|r\n|cFF888888（点击复制群号到聊天框）|r",
+                        name = "微信号：|cFFFFD200Lukbstsuprpowr|r\n|cFF888888（点击复制微信号到聊天框，再去微信加好友拉群）|r",
                         width = "full",
-                        desc = "点击后把 QQ 群号自动填进游戏聊天输入框，按 Ctrl+C 即可复制到系统剪贴板。\n注意：不要按 Enter，否则会把群号发送到当前频道。",
+                        desc = "点击后把微信号自动填进游戏聊天输入框，按 Ctrl+C 即可复制到系统剪贴板，再到微信里搜索添加。\n注意：不要按 Enter，否则会把微信号发送到当前频道。",
                         func = function()
-                            -- 把群号塞进默认聊天输入框，并立刻全选 —— 用户按 Ctrl+C 直接复制
                             local cf = DEFAULT_CHAT_FRAME
                             local eb = ChatEdit_ChooseBoxForSend(cf)
                             if not eb then return end
                             ChatEdit_ActivateChat(eb)
-                            eb:SetText("124134274")
-                            -- 延迟一帧再 SetFocus + 全选：AceConfig 点击释放鼠标时会抢焦点，
-                            -- 现帧调用容易被覆盖；下一帧再做能保证选中状态留在聊天框
+                            eb:SetText("Lukbstsuprpowr")
                             C_Timer.After(0, function()
                                 if not eb:IsVisible() then return end
                                 eb:SetFocus()
