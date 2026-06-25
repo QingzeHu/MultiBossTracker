@@ -56,21 +56,18 @@ function RPF:GetActiveChecklist(sContext, tBoss)
     if sContext == "enter" or sContext == "summon" or sContext == "pull" then
         append(BuildGlobalComp())
     end
+    -- 1b) 用户通用自定义（配置面板里加的）
+    append(self.db.tGlobal)
 
     -- 2) 副本级覆盖（按中文区域名索引，与 MBT/BossDetect 对齐）
     local sZone = tBoss and tBoss.sZone
     local zone = sZone and self.db.tZones[sZone]
     if zone then
-        append(zone.tItems)
-        append(zone.tAuras)
-        append(zone.tComp)
+        append(zone.tChecks)
         -- 3) boss 级覆盖
         local iEncID = tBoss and tBoss.iEncID
         if iEncID and zone.tBosses and zone.tBosses[iEncID] then
-            local b = zone.tBosses[iEncID]
-            append(b.tItems)
-            append(b.tAuras)
-            append(b.tComp)
+            append(zone.tBosses[iEncID].tChecks)
         end
     end
 

@@ -119,6 +119,30 @@ function RPF:GetUpcomingBoss()
     return { sZone = zk, sName = bossNameFromSlots(zd) }
 end
 
+-- 给配置编辑器用：列出可选副本名 / 某副本的 boss 列表。
+function RPF:GetZoneNames()
+    local zones, out = getZones(), {}
+    for k in pairs(zones) do
+        if k ~= "bLocalized" and type(k) == "string" then out[#out + 1] = k end
+    end
+    table.sort(out)
+    return out
+end
+
+function RPF:GetZoneBosses(sZone)
+    local zd = getZones()[sZone]
+    local out = {}
+    if zd and zd.Encounters then
+        for k, v in pairs(zd.Encounters) do
+            if type(k) == "number" and type(v) == "table" then
+                out[#out + 1] = { iEncID = k, sName = bossNameFromSlots(v) or ("编码 " .. k) }
+            end
+        end
+        table.sort(out, function(a, b) return a.iEncID < b.iEncID end)
+    end
+    return out
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:RegisterEvent("ZONE_CHANGED")

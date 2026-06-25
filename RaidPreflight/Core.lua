@@ -97,8 +97,10 @@ RPF.defaults = {
     iEnterCooldown = 6 * 60 * 60,  -- 6 小时
     tShownEnter = {},
 
-    -- 用户对内置模板的覆盖（v1 先留扩展位，UI 配置面板在 v2）。
-    -- 结构：tZones[中文区域名] = { tItems=..., tAuras=..., tComp=..., tBosses={[encID]=...} }
+    -- 用户自定义检查。
+    -- tGlobal：追加到内置默认之后的通用检查（一条条 descriptor，见 Data/Templates.lua）。
+    tGlobal = {},
+    -- tZones[中文区域名] = { tItems=..., tAuras=..., tComp=..., tBosses={[encID]={...}} }
     --   区域名 / encID 与 MBT 数据对齐（见 BossDetect / Data/Zones.lua）。
     tZones = {},
 }
@@ -128,9 +130,17 @@ SlashCmdList["RAIDPREFLIGHT"] = function(msg)
     local db = RPF.db
     if not db then return end
 
-    if msg == "" or msg == "check" or msg == "show" then
+    if msg == "" or msg == "config" or msg == "options" or msg == "panel" then
+        if RPF.OpenPanel then RPF:OpenPanel() end
+    elseif msg == "check" or msg == "show" then
         -- 手动跑一次"当前情境"检查（进本/开战前都行）
         RPF:Fire("RPF_ManualCheck")
+    elseif msg == "edit" then
+        if RPF.ShowEditor then RPF:ShowEditor() end
+    elseif msg == "export" then
+        if RPF.ShowExportFrame then RPF:ShowExportFrame() end
+    elseif msg == "import" then
+        if RPF.ShowImportFrame then RPF:ShowImportFrame() end
     elseif msg == "reset" then
         wipe(db.tShownEnter)
         print("|cff66ccffRaidPreflight|r: 进本弹窗记录已清空，下次进本会重新弹。")
@@ -146,7 +156,10 @@ SlashCmdList["RAIDPREFLIGHT"] = function(msg)
         print(("|cff66ccffRaidPreflight|r: %s 检查 = %s"):format(msg, db[key] and "开" or "关"))
     else
         print("|cff66ccffRaidPreflight|r 用法：")
-        print("  /rpf            手动检查当前情境")
+        print("  /rpf            打开设置面板")
+        print("  /rpf check      手动检查当前情境")
+        print("  /rpf edit       编辑检查清单")
+        print("  /rpf export|import   导出 / 导入分享串")
         print("  /rpf reset      清空进本弹窗记录（重新弹）")
         print("  /rpf on|off     总开关")
         print("  /rpf summon|enter|pull  切换对应触发器")
