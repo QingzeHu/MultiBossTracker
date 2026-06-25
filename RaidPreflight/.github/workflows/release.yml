@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build addon zip
+        id: build
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          STAGING="$(mktemp -d)"
+          ADDON_DIR="$STAGING/RaidPreflight"
+          mkdir -p "$ADDON_DIR"
+          rsync -a \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.claude' \
+            --exclude '.cursor' \
+            --exclude '.aider*' \
+            --exclude '.gitignore' \
+            --exclude 'CHANGELOG.md' \
+            --exclude '*.zip' \
+            --exclude '*.tar.gz' \
+            --exclude 'release' \
+            --exclude 'build' \
+            ./ "$ADDON_DIR/"
+          ZIP_NAME="RaidPreflight-${VERSION}.zip"
+          (cd "$STAGING" && zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" RaidPreflight)
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.build.outputs.version }}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## " v "( |$)" {flag=1; print; next}
+            flag && /^## / {flag=0}
+            flag {print}
+          ' CHANGELOG.md > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "Release ${VERSION}" > release_notes.md
+          fi
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: ${{ steps.build.outputs.zip_name }}
