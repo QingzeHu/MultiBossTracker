@@ -43,7 +43,7 @@ end
 
 -- 对外：取某情境下的完整检查清单（已合并三级）。
 -- sContext: "summon" | "enter" | "pull"
--- tBoss:    {iMapID=, iEncID=, sName=} 或 nil
+-- tBoss:    {sZone=, iEncID=, sName=} 或 nil（sZone/iEncID 与 MBT 数据对齐）
 function RPF:GetActiveChecklist(sContext, tBoss)
     local out = {}
     local function append(list)
@@ -57,9 +57,9 @@ function RPF:GetActiveChecklist(sContext, tBoss)
         append(BuildGlobalComp())
     end
 
-    -- 2) 副本级覆盖
-    local iMapID = tBoss and tBoss.iMapID
-    local zone = iMapID and self.db.tZones[iMapID]
+    -- 2) 副本级覆盖（按中文区域名索引，与 MBT/BossDetect 对齐）
+    local sZone = tBoss and tBoss.sZone
+    local zone = sZone and self.db.tZones[sZone]
     if zone then
         append(zone.tItems)
         append(zone.tAuras)

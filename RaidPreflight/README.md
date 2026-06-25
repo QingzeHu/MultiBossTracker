@@ -41,11 +41,12 @@ preflight 是**开战前**的事。一旦进入战斗（`PLAYER_REGEN_DISABLED`�
 通用 → 副本（按 `instanceMapID`）→ boss（按 `encounterID`），逐级追加。内置一套合理默认；用户覆盖写在 `RaidPreflightDB.tZones`：
 
 ```lua
-RaidPreflightDB.tZones[409] = {
+-- 按「中文区域名」索引，encID 与 MBT 数据对齐
+RaidPreflightDB.tZones["熔火之心"] = {
   tItems = { { sType="item", iItemID=12345, sLabel="本本专用药" } },
   tComp  = { { sType="comp", aClasses={"PRIEST"}, sLabel="心灵之火" } },
   tBosses = {
-    [663] = { tAuras = { { sType="aura_keyword", aKeywords={"防火"}, sLabel="防火合剂" } } },
+    [665] = { tAuras = { { sType="aura_keyword", aKeywords={"防火"}, sLabel="防火合剂" } } },
   },
 }
 ```
@@ -59,9 +60,18 @@ RaidPreflightDB.tZones[409] = {
 /rpf summon|enter|pull   切换对应触发器
 ```
 
+## Boss 顺序：复用 MultiBossTracker，不维护两份
+
+开战前「下一个 boss」的推断**直接复用 MBT 的数据**：
+
+- **首选**：运行时读 `_G.MultiBossTracker.localizedZones`（MBT 已本地化成中文的副本/顺序表）。装了 MBT 就零拷贝拿到**全部**副本，随 MBT 更新自动同步。`## OptionalDeps: MultiBossTracker` 保证它先加载。
+- **回退**：没装 MBT 时用 `Data/Zones.lua` 里的同构小种子（仅熔火之心示例）。
+
+推断逻辑也照搬 MBT：子区域优先 > 主区域 → 当前 encounter（`iStartingFight` 起，`ENCOUNTER_END` 顺 `iNextEncounter` 推进）→ 鼠标悬浮/选中某 boss 的 NPCID 直接覆盖（玩家表态优先）。
+
 ## ⚠️ 种子数据
 
-`Data/Consumables.lua`（itemID）和 `Data/Zones.lua`（boss 顺序）是**示例种子**——泰坦怀旧时光对掉落/副本多有改动，请按服务器实际校对补全。光环检查尽量用「名字关键字」匹配，跨 itemID 改动更稳。
+`Data/Consumables.lua`（itemID）是**示例种子**——泰坦怀旧时光对掉落多有改动，请按服务器校对。光环检查尽量用「名字关键字」匹配，跨 itemID 改动更稳。Boss 顺序见上，复用 MBT 无需在此维护。
 
 ## 路线图
 

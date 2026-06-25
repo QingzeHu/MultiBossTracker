@@ -1,11 +1,32 @@
 -- Boss 推断：开战前判断「下一个要打谁」，喂给模板做 boss 级匹配。
--- 思路照搬 MultiBossTracker：地点能定就用地点，定不了就硬编码顺序，
--- 玩家鼠标悬浮/选中某 boss 视为「就打它」，优先级最高。
+-- 数据复用 MultiBossTracker：优先读它已本地化的 localizedZones，没装则用自带回退表。
+-- 推断逻辑照搬 MBT：地点(子区域优先>主区域) → 当前 encounter(iStartingFight + ENCOUNTER_END
+-- 顺 iNextEncounter 推进) → 鼠标悬浮/选中某 boss 的 NPCID 直接覆盖（玩家表态，优先级最高）。
+
 local addonName, RPF = ...
 
-local iCurMapID = nil
-local iPendingEncID = nil   -- 悬浮/目标表态出来的 boss
-local iOrderPtr = 1         -- 硬编码顺序指针（1-based，指向 tOrder）
+local LETTERS = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" }
+
+local sCurZoneKey = nil   -- 当前命中的中文区域 key
+local iCurEnc     = nil   -- 当前 encounterID（nil = 用 iStartingFight 兜底）
+
+-- 数据源：装了 MBT 就用它本地化好的表，否则回退自带种子。
+local function getZones()
+    local mbt = _G.MultiBossTracker
+    if mbt and mbt.localizedZones and next(mbt.localizedZones) then
+        return mbt.localizedZones
+    end
+    return RPF.ZonesFallback
+end
+
+-- 区域 key 解析：子区域优先，退回主区域（与 MBT GetZoneData 一致）。
+local function resolveZoneKey(zones)
+    local sub = GetSubZoneText()
+    if sub and sub ~= "" and zones[sub] then return sub end
+    local zone = GetZoneText()
+    if zone and zones[zone] then return zone end
+    return nil
+end
 
 local function npcIDFromUnit(unit)
     if not UnitExists(unit) or UnitIsDead(unit) then return nil end
@@ -14,58 +35,88 @@ local function npcIDFromUnit(unit)
     return select(6, strsplit("-", guid))
 end
 
-local function noteUnit(unit)
-    local npcID = npcIDFromUnit(unit)
-    if not npcID then return end
-    local hit = RPF:LookupBossByNPCID(npcID)
-    if hit and hit.iMapID == iCurMapID then
-        iPendingEncID = hit.iEncID
+-- 从一个 encounter（或 flat 区域）的 A..J 槽位收集 boss 名。
+local function bossNameFromSlots(t)
+    local names = {}
+    for _, L in ipairs(LETTERS) do
+        local slot = t[L]
+        if type(slot) == "table" and slot.sTarName then
+            names[#names + 1] = slot.sTarName
+        end
+    end
+    if #names == 0 then return nil end
+    return table.concat(names, " / ")
+end
+
+-- 选当前 encounterID：已锁定 > iStartingFight > 最小编号兜底。
+local function currentEncID(enc)
+    if iCurEnc and enc[iCurEnc] then return iCurEnc end
+    if enc.iStartingFight and enc[enc.iStartingFight] then return enc.iStartingFight end
+    local best
+    for k, v in pairs(enc) do
+        if type(k) == "number" and type(v) == "table" then
+            if not best or k < best then best = k end
+        end
+    end
+    return best
+end
+
+local function refreshZone()
+    local zones = getZones()
+    local zk = resolveZoneKey(zones)
+    if zk ~= sCurZoneKey then
+        sCurZoneKey = zk
+        iCurEnc = nil
     end
 end
 
--- ENCOUNTER_END 成功 → 顺序指针推进到该 boss 之后。
-local function advanceOrder(iEncID)
-    local zone = iCurMapID and RPF.Zones[iCurMapID]
-    if not zone or not zone.tOrder then return end
-    for idx, enc in ipairs(zone.tOrder) do
-        if enc == iEncID then
-            iOrderPtr = math.min(idx + 1, #zone.tOrder + 1)
-            return
+-- 鼠标悬浮/选中某 boss → 锁到它所在 encounter。
+local function detectUnit(unit)
+    if InCombatLockdown() then return end
+    local npcID = npcIDFromUnit(unit)
+    if not npcID then return end
+    refreshZone()
+    local zd = sCurZoneKey and getZones()[sCurZoneKey]
+    local enc = zd and zd.Encounters
+    if not enc then return end
+    for iEncID, tEnc in pairs(enc) do
+        if type(tEnc) == "table" then
+            for _, slot in pairs(tEnc) do
+                if type(slot) == "table" and slot.sNPCID == npcID then
+                    iCurEnc = iEncID
+                    return
+                end
+            end
         end
     end
 end
 
-local function refreshZone()
-    local _, _, _, _, _, _, _, instanceMapID = GetInstanceInfo()
-    if instanceMapID ~= iCurMapID then
-        iCurMapID = instanceMapID
-        iPendingEncID = nil
-        iOrderPtr = 1
+-- ENCOUNTER_END 成功 → 顺 iNextEncounter 推进。
+local function advanceOrder(iEncID)
+    local zd = sCurZoneKey and getZones()[sCurZoneKey]
+    local enc = zd and zd.Encounters
+    if enc and enc[iEncID] and enc[iEncID].iNextEncounter then
+        iCurEnc = enc[iEncID].iNextEncounter
     end
 end
 
--- 对外：返回 {iMapID, iEncID, sName} 或 nil。
+-- 对外：返回 {sZone, iEncID, sName} 或 nil。
 function RPF:GetUpcomingBoss()
     refreshZone()
-    local zone = iCurMapID and RPF.Zones[iCurMapID]
-    if not zone then return nil end
+    local zk = sCurZoneKey
+    if not zk then return nil end
+    local zd = getZones()[zk]
+    if not zd then return nil end
 
-    -- 1) 玩家表态（悬浮/目标）
-    if iPendingEncID and zone.tEnc[iPendingEncID] then
-        return { iMapID = iCurMapID, iEncID = iPendingEncID, sName = zone.tEnc[iPendingEncID].sName }
+    local enc = zd.Encounters
+    if enc then
+        local iEncID = currentEncID(enc)
+        local slots = iEncID and enc[iEncID]
+        if not slots then return { sZone = zk } end
+        return { sZone = zk, iEncID = iEncID, sName = bossNameFromSlots(slots) }
     end
-    -- 2) 子地点唯一对应
-    local sub = GetSubZoneText()
-    if sub and zone.tBySubZone and zone.tBySubZone[sub] then
-        local enc = zone.tBySubZone[sub]
-        return { iMapID = iCurMapID, iEncID = enc, sName = zone.tEnc[enc] and zone.tEnc[enc].sName }
-    end
-    -- 3) 硬编码顺序指针
-    if zone.tOrder and zone.tOrder[iOrderPtr] then
-        local enc = zone.tOrder[iOrderPtr]
-        return { iMapID = iCurMapID, iEncID = enc, sName = zone.tEnc[enc] and zone.tEnc[enc].sName }
-    end
-    return nil
+    -- flat 区域（单 boss / 动态阵容）
+    return { sZone = zk, sName = bossNameFromSlots(zd) }
 end
 
 local f = CreateFrame("Frame")
@@ -78,9 +129,9 @@ f:RegisterEvent("PLAYER_TARGET_CHANGED")
 f:RegisterEvent("ENCOUNTER_END")
 f:SetScript("OnEvent", function(_, event, ...)
     if event == "UPDATE_MOUSEOVER_UNIT" then
-        noteUnit("mouseover")
+        detectUnit("mouseover")
     elseif event == "PLAYER_TARGET_CHANGED" then
-        noteUnit("target")
+        detectUnit("target")
     elseif event == "ENCOUNTER_END" then
         local iEncID, _, _, _, success = ...
         if success == 1 then advanceOrder(iEncID) end

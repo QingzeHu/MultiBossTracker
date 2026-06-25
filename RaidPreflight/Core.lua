@@ -98,7 +98,8 @@ RPF.defaults = {
     tShownEnter = {},
 
     -- 用户对内置模板的覆盖（v1 先留扩展位，UI 配置面板在 v2）。
-    -- 结构：tZones[mapID] = { tItems=..., tAuras=..., tComp=..., tBosses={[encID]=...} }
+    -- 结构：tZones[中文区域名] = { tItems=..., tAuras=..., tComp=..., tBosses={[encID]=...} }
+    --   区域名 / encID 与 MBT 数据对齐（见 BossDetect / Data/Zones.lua）。
     tZones = {},
 }
 
