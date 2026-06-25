@@ -12,15 +12,18 @@
 | **自己跑进本** | `PLAYER_ENTERING_WORLD` | 进入 5/10/25 人副本时弹一次。同一副本+难度在冷却期（默认 6h，近似一个副本周期）内不再弹 |
 | **开战前** | `READY_CHECK`（团队倒计时/检查准备） | 针对**下一个 boss** 弹清单，可重新检查 |
 
-## 一个重要前提
+## 开战即自动消失
 
-能不能「进本前」查，取决于这东西在引擎里是什么：
+preflight 是**开战前**的事。一旦进入战斗（`PLAYER_REGEN_DISABLED`），弹窗**立刻自己收起**——免得你忘了点、又被人意外开团，多一步确认手忙脚乱。本插件**绝不触碰任何开战逻辑**。
 
-- ✅ **自身物资**（包里物品，`GetItemCount`）、**自身增益**（`UnitAura`，合剂/食物 buff）——随时可查。
-- ✅ **团队职业构成**——扫 `raid/party` 的职业，判断「提供某 debuff 的职业在不在场」。
-- ❌ **打在 boss 身上的 debuff**（法术易伤 / 破甲等）——开战前 boss 身上根本没有，查不了。开战前只能查「**有没有能上它的职业**」；「**真打上没有**」要开战后验证（那是 MultiBossTracker 的活）。
+## 团队构成检查：职业 + 专精
 
-> v1 团队检查只能按**职业**判断，读不到天赋/专精（inspect 留待后续）。
+法术易伤 / 精灵火这类「给 boss 的 debuff」，本插件**不在开战时检查**，而是**进本前/开战前**就把团队扫一遍，看「**有没有能提供它的职业、专精对不对**」：
+
+- ✅ **专精可读**：自己 `GetSpecialization`，别人 `NotifyInspect → INSPECT_READY → GetInspectSpecialization`。`Inspect.lua` 组队后常驻预热缓存，ready check 时多半已就绪；没读到的回退职业级并标 **「专精待确认」(黄色 `!`)**。
+- ❌ **单个天赋点不做**：MoP Classic 5.5 删了 WotLK 的 `GetTalentInfo(row,index)`，被检视单位的天赋点拿不到（MultiBossTracker 本身也放弃了天赋检测）。所以做到**专精**粒度——多数团队 debuff 来源按职业/专精已足够判断。
+
+> 旁注：「debuff 真打上 boss 没有」是开战后的事，属于 MultiBossTracker 的范畴，本插件不碰。
 
 ## 检查项类型
 
@@ -30,6 +33,7 @@
 { sType = "aura_keyword", aKeywords = {"合剂"}, sLabel = "合剂 / 药剂" }  -- 身上有名字含关键字的 buff
 { sType = "item",  iItemID = 5512, iMin = 1, sLabel = "治疗石" }          -- 包里数量 >= iMin
 { sType = "comp",  aClasses = {"WARLOCK"}, sLabel = "法术易伤来源（术士）" } -- 团队有该职业
+{ sType = "comp",  aClasses = {"WARLOCK"}, aSpecIDs = {266}, sLabel = "毁灭术士" } -- 职业 + 专精
 ```
 
 ## 模板三级覆盖

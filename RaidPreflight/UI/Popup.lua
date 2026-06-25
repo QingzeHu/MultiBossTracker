@@ -35,6 +35,11 @@ local function ensureFrame()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+    -- 开战即自动消失：preflight 是「开战前」的事，一旦进战斗立刻收起，
+    -- 免得用户忘了点、又被人意外开团，多一步确认手忙脚乱。绝不触碰开战逻辑。
+    frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+    frame:SetScript("OnEvent", function(self) self:Hide() end)
     frame:SetBackdrop({
         bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -70,7 +75,10 @@ local function layout(tResults)
         local r = rows[i]
         if not r then r = makeRow(frame, i); rows[i] = r end
         local res = tResults[i]
-        if res.bOK then
+        if res.bOK and res.bWarn then
+            r.mark:SetText("|cffffcc00!|r")            -- 黄：通过但有保留（如专精待确认）
+            r.label:SetTextColor(1, 0.85, 0.3)
+        elseif res.bOK then
             r.mark:SetText("|cff33ff33✓|r")
             r.label:SetTextColor(0.9, 0.9, 0.9)
         else
@@ -100,12 +108,17 @@ function RPF:ShowChecklist(opts)
 
     local function paint(tResults, bAllOK)
         layout(tResults)
-        if bAllOK then
-            frame.summary:SetText("|cff33ff33全部就绪|r")
-        else
-            local miss = 0
-            for _, r in ipairs(tResults) do if not r.bOK then miss = miss + 1 end end
+        local miss, warn = 0, 0
+        for _, r in ipairs(tResults) do
+            if not r.bOK then miss = miss + 1
+            elseif r.bWarn then warn = warn + 1 end
+        end
+        if miss > 0 then
             frame.summary:SetText(("|cffff4040缺 %d 项|r"):format(miss))
+        elseif warn > 0 then
+            frame.summary:SetText(("|cffffcc00就绪（%d 项待确认）|r"):format(warn))
+        else
+            frame.summary:SetText("|cff33ff33全部就绪|r")
         end
     end
     paint(opts.tResults, opts.bAllOK)

@@ -22,12 +22,18 @@ local function BuildGlobalSelf()
     return t
 end
 
--- 通用团队构成检查（v1 只能按「职业是否在场」判断，读不到天赋/专精——inspect 留到后续）。
--- ⚠️ 下面的职业归类是种子，按你服务器的技能改动调整。
+-- 通用团队构成检查。
+-- comp 检查支持可选的 aSpecIDs（专精 ID 列表）：给了就要求「职业在场 + 专精匹配」，
+-- 没给就只看职业在不在。专精靠 Inspect.lua 后台 inspect 读，读不到会标「专精待确认」(黄)。
+-- ⚠️ 职业/专精归类是种子，按你服务器的技能改动调整。专精 ID 见暴雪 specialization ID，
+--    本服若改过专精机制需自行校对。示例（注释掉的）：精灵火只要德鲁伊职业即可，无需专精。
 local function BuildGlobalComp()
     return {
         { sType = "comp", aClasses = { "SHAMAN", "MAGE", "HUNTER" },
           sLabel = "嗜血 / 时空扭曲 来源" },
+        -- 想精确到专精时这样写（示例 ID，请校对）：
+        -- { sType = "comp", aClasses = { "WARLOCK" }, aSpecIDs = { 265, 266, 267 },
+        --   sLabel = "法术易伤来源（术士）" },
         { sType = "comp", aClasses = { "WARLOCK" },
           sLabel = "法术易伤来源（术士 元素诅咒）" },
         { sType = "comp", aClasses = { "WARRIOR", "ROGUE", "DEATHKNIGHT", "HUNTER", "DRUID" },

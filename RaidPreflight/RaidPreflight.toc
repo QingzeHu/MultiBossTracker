@@ -4,7 +4,7 @@
 ## Notes: Pre-flight checklist — verify consumables / buffs / raid comp before a summon, on instance entry, and before each boss pull
 ## Notes-zhCN: 进本前 / 开战前的 preflight 检查清单 —— 自动核对消耗品、增益、团队职业构成
 ## Author: Qingze Hu
-## Version: 0.1.0
+## Version: 0.2.0
 ## X-License: MIT
 ## X-Category: Raid
 ## SavedVariables: RaidPreflightDB
@@ -16,6 +16,7 @@ Data\Consumables.lua
 Data\Templates.lua
 Data\Zones.lua
 
+Inspect.lua
 Checks.lua
 BossDetect.lua
 UI\Popup.lua
