@@ -287,6 +287,68 @@ local PHASES = {
             },
         },
     },
+
+    {
+        key = "P5", label = "P5 — 祖阿曼 / 太阳之井高地",
+        sections = {
+            {
+                header = "祖阿曼",
+                bosses = {
+                    { name = "埃基尔松",         npcID = "23574",
+                      adds = { { name = "翱翔的雄鹰", npcID = "24858" } } },
+                    { name = "纳洛拉克",         npcID = "23576" },
+                    { name = "加亚莱",           npcID = "23578",
+                      adds = {
+                          { name = "阿曼尼孵化者",   npcID = "23818" },
+                          { name = "阿曼尼龙鹰幼崽", npcID = "23598" },
+                      } },
+                    { name = "哈尔拉兹",         npcID = "23577",
+                      adds = {
+                          { name = "山猫之灵",     npcID = "24143" },
+                          { name = "腐化闪电图腾", npcID = "24224" },
+                      } },
+                    -- 随从 8 选 4（每周服务器随机），靠名牌/悬浮只显示在场的
+                    { name = "妖术领主玛拉卡斯", npcID = "24239",
+                      adds = {
+                          { name = "阿莱松·安提雷", npcID = "24240" },
+                          { name = "索尔格",       npcID = "24241" },
+                          { name = "滑行者",       npcID = "24242" },
+                          { name = "兰尔丹",       npcID = "24243" },
+                          { name = "卡扎克洛斯",   npcID = "24244" },
+                          { name = "沼泽猎手",     npcID = "24245" },
+                          { name = "黑心",         npcID = "24246" },
+                          { name = "库拉格",       npcID = "24247" },
+                      } },
+                    { name = "祖尔金",           npcID = "23863" },
+                },
+            },
+            {
+                header = "太阳之井高地",
+                bosses = {
+                    { name = "卡雷苟斯",         npcID = "24850",
+                      adds = { { name = "腐蚀者萨索瓦尔", npcID = "24892" } } },
+                    { name = "布鲁塔卢斯",       npcID = "24882" },
+                    { name = "菲米丝",           npcID = "25038",
+                      adds = { { name = "顽强的死尸", npcID = "25268" } } },
+                    { name = "萨洛拉丝女王",     npcID = "25165" },
+                    { name = "高阶术士奥蕾塞丝", npcID = "25166" },
+                    { name = "穆鲁",             npcID = "25741",
+                      adds = {
+                          { name = "熵魔",         npcID = "25840" },
+                          { name = "暗誓狂暴者",   npcID = "25798" },
+                          { name = "暗誓怒火法师", npcID = "25799" },
+                          { name = "虚空戒卫",     npcID = "25772" },
+                      } },
+                    { name = "基尔加丹",         npcID = "25315",
+                      adds = {
+                          { name = "基尔加丹之手", npcID = "25588" },
+                          { name = "邪恶镜像",     npcID = "25708" },
+                          { name = "护盾宝珠",     npcID = "25502" },
+                      } },
+                },
+            },
+        },
+    },
 }
 
 -- 一个 boss/小怪条目的 hidden 状态：单个 NPCID 直接查；多 NPCID 全部隐藏才算 true

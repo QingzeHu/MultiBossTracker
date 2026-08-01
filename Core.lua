@@ -270,7 +270,7 @@ MBT.defaults = {
 
         -- Per-tier NPC blacklist (each is a flat table of "bOptionName" -> bool).
         tNPCBlackList = {
-            tTesting = {}, tT1 = {}, tT2 = {}, tT3 = {}, tT4 = {},
+            tTesting = {}, tT1 = {}, tT2 = {}, tT3 = {}, tT4 = {}, tT5 = {},
         },
 
         tDebug = {
