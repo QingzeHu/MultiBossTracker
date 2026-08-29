@@ -29,6 +29,15 @@ local function RebuildLocalizedZones()
     MBT.localizedZones = tLocalizedZones
 end
 
+-- ENCOUNTER_START —服务器直接给出正在开打的编码，比名牌/悬浮检测权威。
+local function HandleEncounterStart(iEncID)
+    local tZoneData = tLocalizedZones[sLastZone]
+    local enc = tZoneData and tZoneData["Encounters"]
+    if enc and enc[iEncID] then
+        iCurrentEncounter = iEncID
+    end
+end
+
 -- ENCOUNTER_END — advance to the next pull's frames if the boss died.
 local function HandleEncounterEnd(iEncID, encounterName, difficulty, groupSize, success)
     local tZoneData = tLocalizedZones[sLastZone]
@@ -180,6 +189,9 @@ local function Tick(event, ...)
         iPresentOrder = 0
         -- Short delay so other modules' STATUS work has run, then schedule a late-init.
         C_Timer.After(0.1, function() MBT:FireEvent("MultiBossTracker_ZoneData_LateInit") end)
+    elseif event == "ENCOUNTER_START" then
+        -- 故意不 return：这一帧若还没进战斗锁定，下面的广播能顺手把安全宏也修正过来。
+        HandleEncounterStart(...)
     elseif event == "ENCOUNTER_END" then
         return HandleEncounterEnd(...)
     end
@@ -190,6 +202,8 @@ local function Tick(event, ...)
         DetectUnit("mouseover")
     elseif event == "NAME_PLATE_UNIT_ADDED" then
         DetectUnit(...)
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        DetectUnit("target")
     end
 
     local newZone, tZoneData = GetZoneData()
@@ -198,6 +212,11 @@ local function Tick(event, ...)
     sLastZone = newZone
     bLastResult = (tZoneData ~= nil)
     return bLastResult
+end
+
+-- 给 /mbt where 用：当前选中的 encounter 编码（0 = 还没定，会回退到 iStartingFight）
+function MBT.GetCurrentEncounter()
+    return iCurrentEncounter
 end
 
 -- Each new tier section as it loads triggers a rebuild and a re-evaluate.
@@ -213,9 +232,11 @@ frame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 frame:RegisterEvent("ZONE_CHANGED_INDOORS")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+frame:RegisterEvent("ENCOUNTER_START")
 frame:RegisterEvent("ENCOUNTER_END")
 frame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
 frame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 frame:SetScript("OnEvent", function(_, event, ...) Tick(event, ...) end)
 
 MBT:RegisterMDFEvent("STATUS", function() Tick("STATUS") end)

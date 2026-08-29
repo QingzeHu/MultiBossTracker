@@ -377,6 +377,14 @@ function MBT.AceAddon:OnInitialize()
             else
                 self:Print("|cFFFF6666该区域不在数据集里 —— 这里不会显示框体。|r")
             end
+            if MBT.GetCurrentEncounter then
+                local iEnc = MBT.GetCurrentEncounter()
+                if iEnc == 0 then
+                    self:Print("|cFFFFFF66当前编码:|r 未确定（回退到该副本的第一个 boss）")
+                else
+                    self:Print(("|cFFFFFF66当前编码:|r %d"):format(iEnc))
+                end
+            end
             for _, unit in ipairs({"target", "mouseover"}) do
                 if UnitExists(unit) then
                     local guid = UnitGUID(unit)
