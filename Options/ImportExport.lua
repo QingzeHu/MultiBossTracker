@@ -1,5 +1,5 @@
 -- 配置档导入 / 导出
--- 把当前 profile 序列化成可分享的字符串：Lua 源码 → base64 → 加版本前缀。
+-- 把当前 profile 里与默认值不同的项序列化成可分享的字符串：Lua 源码 → base64 → 加版本前缀。
 -- 导入时反解，按 profile 名直接写入（重名覆盖，不询问）。
 local addonName, MBT = ...
 
@@ -38,7 +38,7 @@ local function serializeValue(v, indent)
         local keys = {}
         for k in pairs(v) do keys[#keys+1] = k end
         table.sort(keys, function(a, b)
-            if type(a) ~= type(b) then return tostring(a) < tostring(b) end
+            if type(a) ~= type(b) then return type(a) < type(b) end
             return a < b
         end)
         for _, k in ipairs(keys) do
@@ -96,29 +96,28 @@ end
 
 local function base64Decode(s)
     buildDecodeLookup()
-    s = s:gsub("%s+", "")
-    local pad = 0
-    if s:sub(-2) == "==" then pad = 2; s = s:sub(1, -3)
-    elseif s:sub(-1) == "=" then pad = 1; s = s:sub(1, -2) end
+    -- 末尾 '=' 只是补位，去掉后剩余字符数就决定了输出字节数（4→3、3→2、2→1）
+    s = s:gsub("%s+", ""):gsub("=+$", "")
     if #s % 4 == 1 then return nil, "base64 长度不合法" end
 
     local out = {}
+    local n = #s
     local i = 1
-    while i <= #s do
+    while i <= n do
         local c1 = b64Decode_lookup[s:sub(i, i)]
         local c2 = b64Decode_lookup[s:sub(i + 1, i + 1)]
         local c3 = b64Decode_lookup[s:sub(i + 2, i + 2)]
         local c4 = b64Decode_lookup[s:sub(i + 3, i + 3)]
-        if not c1 or not c2 then return nil, "base64 含非法字符" end
+        if not c1 or not c2
+            or (not c3 and i + 2 <= n) or (not c4 and i + 3 <= n) then
+            return nil, "base64 含非法字符"
+        end
         out[#out+1] = string.char(c1 * 4 + math.floor(c2 / 16))
         if c3 then out[#out+1] = string.char((c2 % 16) * 16 + math.floor(c3 / 4)) end
         if c4 then out[#out+1] = string.char((c3 % 4) * 64 + c4) end
         i = i + 4
     end
-    local result = table.concat(out)
-    -- pad 表示编码时补了几个字节，反推应丢弃多少尾部字节
-    if pad > 0 then result = result:sub(1, #result - pad) end
-    return result
+    return table.concat(out)
 end
 
 -- =====================================================================
@@ -149,6 +148,25 @@ local function deepCopyInto(src, dst)
 end
 
 -- =====================================================================
+-- 只挑出与默认值不同的项 —— 导入侧会先 ResetProfile 铺好默认值，没带的自然回落
+-- =====================================================================
+local function diffDefaults(cur, def)
+    local out, bAny = {}, false
+    for k, v in pairs(cur) do
+        -- 不能写成 `def and def[k] or nil`：默认值是 false 时会被 or 吃成 nil
+        local d
+        if type(def) == "table" then d = def[k] end
+        if type(v) == "table" then
+            local sub, bSubAny = diffDefaults(v, d)
+            if bSubAny then out[k] = sub; bAny = true end
+        elseif d ~= v then
+            out[k] = v; bAny = true
+        end
+    end
+    return out, bAny
+end
+
+-- =====================================================================
 -- 公共 API
 -- =====================================================================
 
@@ -157,7 +175,7 @@ function MBT:ExportCurrentProfile()
     local name = MBT.db:GetCurrentProfile()
     local payload = {
         name = name,
-        profile = MBT.db.profile,
+        profile = diffDefaults(MBT.db.profile, MBT.defaults and MBT.defaults.profile),
     }
     local src = serializeTable(payload)
     return PREFIX .. base64Encode(src), name
