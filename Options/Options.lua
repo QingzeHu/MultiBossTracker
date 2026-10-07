@@ -349,6 +349,54 @@ local PHASES = {
             },
         },
     },
+
+    {
+        key = "P6", label = "P6 — 奥杜尔",
+        sections = {
+            {
+                header = nil,
+                bosses = {
+                    { name = "烈焰巨兽",         npcID = "33113" },
+                    { name = "掌炉者伊格尼斯",   npcID = "33118" },
+                    { name = "锋鳞",             npcID = "33186" },
+                    { name = "XT-002拆解者",     npcID = "33293",
+                      adds = {
+                          { name = "生命火花",     npcID = "34004" },
+                          { name = "XM-024击打者", npcID = "33344" },
+                      } },
+                    { name = "唤雷者布隆迪尔",   npcID = "32857" },
+                    { name = "符文大师莫尔基姆", npcID = "32927" },
+                    { name = "断钢者",           npcID = "32867" },
+                    { name = "科隆加恩",         npcID = "32930",
+                      adds = {
+                          { name = "右臂", npcID = "32934" },
+                          { name = "左臂", npcID = "32933" },
+                      } },
+                    { name = "欧尔莉亚",         npcID = "33515",
+                      adds = { { name = "野性防御者", npcID = "34035" } } },
+                    { name = "霍迪尔",           npcID = "32845" },
+                    { name = "托里姆",           npcID = "32865" },
+                    { name = "弗蕾亚",           npcID = "32906",
+                      adds = {
+                          { name = "迅疾鞭笞者",   npcID = "32916" },
+                          { name = "风暴鞭笞者",   npcID = "32919" },
+                          { name = "古代水之精魂", npcID = "33202" },
+                      } },
+                    { name = "米米尔隆 (空中指挥单位 / VX-001 / 巨兽二型)",
+                      npcIDs = { "33670", "33651", "33432" },
+                      adds = { { name = "突击机器人", npcID = "34057" } } },
+                    { name = "维扎克斯将军",     npcID = "33271",
+                      adds = { { name = "萨隆邪铁畸体", npcID = "33524" } } },
+                    { name = "尤格-萨隆",        npcID = "33288",
+                      adds = {
+                          { name = "重压触须", npcID = "33966" },
+                          { name = "腐蚀触须", npcID = "33985" },
+                      } },
+                    { name = "观察者奥尔加隆",   npcID = "32871" },
+                },
+            },
+        },
+    },
 }
 
 -- 一个 boss/小怪条目的 hidden 状态：单个 NPCID 直接查；多 NPCID 全部隐藏才算 true

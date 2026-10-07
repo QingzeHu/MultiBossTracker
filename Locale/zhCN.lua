@@ -10,7 +10,7 @@ MBT:RegisterLocale("zhCN", {
     ["Expert's Training Dummy"] = "专家的训练假人",
     ["Master's Training Dummy"] = "大师的训练假人",
 
-    -- Ulduar
+    -- T6 (泰坦怀旧时光 P6): 奥杜尔
     ["Formation Grounds"] = "练兵场",
     ["Flame Leviathan"] = "烈焰巨兽",
     ["The Colossal Forge"] = "巨人熔炉",
